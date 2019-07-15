@@ -16,3 +16,9 @@ C:\Users\d.paddock\Desktop\Projects\Pac-LiteService\Pac-LiteService\obj\Debug\Pa
 C:\Users\d.paddock\Desktop\Projects\Pac-LiteService\Pac-LiteService\obj\Debug\Pac-LiteService.csproj.CopyComplete
 C:\Users\d.paddock\Desktop\Projects\Pac-LiteService\Pac-LiteService\obj\Debug\Pac-LiteService.exe
 C:\Users\d.paddock\Desktop\Projects\Pac-LiteService\Pac-LiteService\obj\Debug\Pac-LiteService.pdb
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.csprojAssemblyReference.cache
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac_LiteService.ProjectInstaller.resources
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.csproj.GenerateResource.cache
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.csproj.CoreCompileInputs.cache
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.exe
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.pdb

@@ -1,41 +1,42 @@
-﻿using System;
+﻿using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
-using Apache.NMS;
+using System;
 
 namespace Pac_LiteService
 {
-    public class  TopicPublisher : IDisposable
+    public delegate void MessageReceivedDelegate(string message);
+
+    public class TopicSubscriber : IDisposable
     {
         private readonly string topicName = null;
         private readonly IConnectionFactory connectionFactory;
         private readonly IConnection connection;
         private readonly ISession session;
-        private readonly IMessageProducer producer;
+        private readonly IMessageConsumer consumer;
         private bool isDisposed = false;
 
-        public TopicPublisher(string topicName, string brokerUri)
+        public event MessageReceivedDelegate OnMessageReceived;
+
+        public TopicSubscriber(string topicName, string brokerUri, string clientId, string consumerId)
         {
             this.topicName = topicName;
             this.connectionFactory = new ConnectionFactory(brokerUri);
             this.connection = this.connectionFactory.CreateConnection();
+            this.connection.ClientId = clientId;
             this.connection.Start();
             this.session = connection.CreateSession();
             ActiveMQTopic topic = new ActiveMQTopic(topicName);
-            this.producer = this.session.CreateProducer(topic);
-
+            this.consumer = this.session.CreateDurableConsumer(topic, consumerId, "2 > 1", false);
+            this.consumer.Listener += new MessageListener(OnMessage);
         }
 
-        public void SendMessage(string message)
+        public void OnMessage(IMessage message)
         {
-            if (!this.isDisposed)
+            ITextMessage textMessage = message as ITextMessage;
+            if (this.OnMessageReceived != null)
             {
-                ITextMessage textMessage = this.session.CreateTextMessage(message);
-                this.producer.Send(textMessage);
-            }
-            else
-            {
-                throw new ObjectDisposedException(this.GetType().FullName);
+                this.OnMessageReceived(textMessage.Text);
             }
         }
 
@@ -45,13 +46,13 @@ namespace Pac_LiteService
         {
             if (!this.isDisposed)
             {
-                this.producer.Dispose();
+                this.consumer.Dispose();
                 this.session.Dispose();
                 this.connection.Dispose();
                 this.isDisposed = true;
             }
         }
 
-        #endregion
+        #endregion IDisposable Members
     }
 }
