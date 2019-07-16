@@ -135,9 +135,9 @@ namespace Pac_LiteService
             try
             {
 
-            using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
-            {
-                DiagnosticWriter.WriteLine(message);
+                using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
+                {
+                    DiagnosticWriter.WriteLine(message);
                 }
             }
             catch
@@ -155,7 +155,7 @@ namespace Pac_LiteService
             JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
             string machineName = receivedPacket["Machine"].ToString();
             string Line = receivedPacket["Line"].ToString();
-            string Theoretical = receivedPacket["Theoretical"].ToString();
+            string Theo = receivedPacket["Theo"].ToString();
             int snp_ID = Convert.ToInt32((byte)message[2]);
             try //try loop in case command fails.
             {
@@ -165,17 +165,17 @@ namespace Pac_LiteService
                 sqlStringBuilder.Append("	[MachineID] [int] NULL, [Good] [bit] NULL, [Bad] [bit] NULL, [Empty] [bit] NULL, [Attempt] [bit] NULL, [Error1] [bit] NULL, [Error2] [bit] NULL, [Error3] [bit] NULL, [Error4] [bit] NULL, [Other] [bit] NULL, [HeadNumber] [int] NULL ");
                 sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
-                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[MachineIndexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
+                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MachineReason] [varchar](255) NULL,	[UserReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
-                sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theoretical) values( @machine , @Line , @SNPID , @Theoretical);");
+                sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
+                sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo) values( @machine , @Line , @SNPID , @Theo);");
                 string SQLString = sqlStringBuilder.ToString();//convert to string
                 using (SqlCommand command = new SqlCommand(SQLString, ENGDBConnection))
                 {
                     command.Parameters.AddWithValue("@machine", machineName);
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
-                    command.Parameters.AddWithValue("@Theoretical", Theoretical);
+                    command.Parameters.AddWithValue("@Theo", Theo);
                     command.ExecuteNonQuery();// execute the command returning number of rows affected
                 }
             }
@@ -198,20 +198,20 @@ namespace Pac_LiteService
             JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
             string machineName = receivedPacket["Machine"].ToString();
             string Line = receivedPacket["Line"].ToString();
-            string Theoretical = receivedPacket["Theoretical"].ToString();
+            string Theo = receivedPacket["Theo"].ToString();
             int snp_ID = Convert.ToInt32((byte)message[2]);
             try //try loop in case command fails.
             {
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
-                sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theoretical = @Theoretical where MachineName = @machine;");
+                sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();//convert to string
                 using (SqlCommand command = new SqlCommand(SQLString, ENGDBConnection))
                 {
                     command.Parameters.AddWithValue("@machine", machineName);
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
-                    command.Parameters.AddWithValue("@Theoretical", Theoretical);
+                    command.Parameters.AddWithValue("@Theo", Theo);
                     command.ExecuteNonQuery();// execute the command returning number of rows affected
                 }
             }
@@ -309,7 +309,7 @@ namespace Pac_LiteService
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
                 {
-                    if (key == "UOM" || key == "Good" || key == "NAED" || key == "Bad" || key == "Empty" || key == "MachineIndexes")//except machine as it is used as the table name.
+                    if (key == "UOM" || key == "Good" || key == "NAED" || key == "Bad" || key == "Empty" || key == "Indexes")//except machine as it is used as the table name.
                     {
                         keySection += key + ", ";//Make a key
                         valueSection += "@" + key + ", ";//and value Reference to be replaced later
@@ -348,7 +348,7 @@ namespace Pac_LiteService
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                                 break;
 
-                            case "MachineIndexes":
+                            case "Indexes":
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                                 break;
 
@@ -427,7 +427,7 @@ namespace Pac_LiteService
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
                 {
-                    if (key == "Status" || key == "Time" || key == "NAED" || key == "MachineReason" || key == "UserReason")//except machine as it is used as the table name.
+                    if (key == "Status" || key == "Time" || key == "NAED" || key == "MReason" || key == "UReason")//except machine as it is used as the table name.
                     {
                         keySection += key + ", ";//Make a key
                         valueSection += "@" + key + ", ";//and value Reference to be replaced later
@@ -450,22 +450,24 @@ namespace Pac_LiteService
 
                             case "Time":
                                 downtime = receivedPacket[key].ToString();
-                                int downday = Convert.ToInt32(downtime.Substring(0, 2));
-                                int downhour = Convert.ToInt32(downtime.Substring(3, 2));
-                                int downminute = Convert.ToInt32(downtime.Substring(6, 2));
-                                int downsecond = Convert.ToInt32(downtime.Substring(9, 2));
-                                command.Parameters.AddWithValue("@" + key, new DateTime(DateTime.Now.Year, DateTime.Now.Month, downday, downhour, downminute, downsecond));
+                                int year = 2000 + Convert.ToInt32(downtime.Substring(0, 2));
+                                int month = Convert.ToInt32(downtime.Substring(3, 2));
+                                int day = Convert.ToInt32(downtime.Substring(6, 2));
+                                int hour = Convert.ToInt32(downtime.Substring(9, 2));
+                                int minute = Convert.ToInt32(downtime.Substring(12, 2));
+                                int second = Convert.ToInt32(downtime.Substring(15, 2));
+                                command.Parameters.AddWithValue("@" + key, new DateTime(year, month, day, hour, minute, second));
                                 break;
 
                             case "NAED":
                                 command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
                                 break;
 
-                            case "MachineReason":
+                            case "MReason":
                                 command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
                                 break;
 
-                            case "UserReason":
+                            case "UReason":
                                 command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
                                 break;
 
@@ -552,7 +554,7 @@ namespace Pac_LiteService
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
                 {
-                    if (key != "Machine" && key != "Theoretical")//except machine as it is used as the table name.
+                    if (key != "Machine" && key != "Theo")//except machine as it is used as the table name.
                     {
                         keySection += key + "], [";//Make a key
                         valueSection += "@" + key + ", ";//and value Reference to be replaced later
@@ -567,7 +569,7 @@ namespace Pac_LiteService
                 {
                     foreach (string key in keys)//foreach key
                     {
-                        if (key != "Machine" && key != "Theoretical")
+                        if (key != "Machine" && key != "Theo")
                             if (key != "HeadNumber")
                             {
                                 command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
@@ -604,7 +606,7 @@ namespace Pac_LiteService
                 IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 foreach (string key in keys)
                 {
-                    if (key != "Machine" && key != "Theoretical" && key != "HeadNumber")
+                    if (key != "Machine" && key != "Theo" && key != "HeadNumber")
                         bits.Add(Convert.ToInt32(receivedPacket[key] ?? '0') == 1); // if the key's value is null set bit to false, otherwise set it to the bit.
                 }
                 bytesToSend.Add((byte)'~');
@@ -623,11 +625,11 @@ namespace Pac_LiteService
                     }
                     bytesToSend.Add(ConvertBoolArrayToByteLeftJustified(Bools));
                 }
-                string Theoretical = Convert.ToString(receivedPacket["Theoretical"]);
+                string Theo = Convert.ToString(receivedPacket["Theo"]);
                 bytesToSend.Add((byte)Convert.ToInt32(receivedPacket["HeadNumber"]));
-                for (int x = 0; x < Theoretical.Length; x++)
+                for (int x = 0; x < Theo.Length; x++)
                 {
-                    bytesToSend.Add((byte)Theoretical[x]);
+                    bytesToSend.Add((byte)Theo[x]);
                 }
                 bytesToSend.Add((byte)10);//new line end character
                 MDEClient.Send(bytesToSend.ToArray(), bytesToSend.Count, MDEIP, MDEClientPort);
@@ -735,13 +737,13 @@ namespace Pac_LiteService
         {
             try
             {
-            ThingsToDispose = new List<Disposable>();
-            Task.Run(() => MQTTConnections());//open all MQTT Connections
-            Task.Run(() => SQLConnections());//open alll SQL Connections
-            Task.Run(() => TCPConnections());//open all TCPConnections
-            Task.Run(() => UDPConnections());//open all UDP Connections
+                ThingsToDispose = new List<Disposable>();
+                Task.Run(() => MQTTConnections());//open all MQTT Connections
+                Task.Run(() => SQLConnections());//open alll SQL Connections
+                Task.Run(() => TCPConnections());//open all TCPConnections
+                Task.Run(() => UDPConnections());//open all UDP Connections
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 DiagnosticOut(ex.ToString());
             }
