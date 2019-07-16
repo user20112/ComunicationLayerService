@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.ServiceProcess;
@@ -16,9 +17,9 @@ using System.Xml.Linq;
 
 namespace Pac_LiteService
 {
-    public partial class Service1 : ServiceBase
+    public partial class PacLiteService : ServiceBase
     {
-        public Service1()
+        public PacLiteService()
         {
             InitializeComponent();
             Console.WriteLine("Initialized!");
@@ -26,7 +27,8 @@ namespace Pac_LiteService
 
         protected override void OnStart(string[] args)
         {
-            Start();
+            DiagnosticOut("here");
+            CallOnStart();
         }
 
         /// <summary>
@@ -34,7 +36,8 @@ namespace Pac_LiteService
         /// </summary>
         protected override void OnStop()
         {
-            Stop();
+            base.OnStop();
+            CallOnStop();
         }
 
         //above is winforms specific code. below should be portable to service.
@@ -129,7 +132,18 @@ namespace Pac_LiteService
 
         private void DiagnosticOut(string message)
         {
-            throw new NotImplementedException();
+            try
+            {
+
+            using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
+            {
+                DiagnosticWriter.WriteLine(message);
+                }
+            }
+            catch
+            {
+
+            }
         }
 
         /// <summary>
@@ -693,9 +707,16 @@ namespace Pac_LiteService
         /// <summary>
         /// Call On stop of service
         /// </summary>
-        private void Stop()
+        private void CallOnStop()
         {
-            MDEClient.Close();//close UDP connections to.
+            try
+            {
+                MDEClient.Close();//close UDP connections to.
+            }
+            catch
+            {
+
+            }
             foreach (Disposable disposable in ThingsToDispose)
             {
                 try
@@ -710,13 +731,20 @@ namespace Pac_LiteService
         /// <summary>
         /// Call On start of service
         /// </summary>
-        private void Start()
+        private void CallOnStart()
         {
+            try
+            {
             ThingsToDispose = new List<Disposable>();
             Task.Run(() => MQTTConnections());//open all MQTT Connections
             Task.Run(() => SQLConnections());//open alll SQL Connections
             Task.Run(() => TCPConnections());//open all TCPConnections
             Task.Run(() => UDPConnections());//open all UDP Connections
+            }
+            catch(Exception ex)
+            {
+                DiagnosticOut(ex.ToString());
+            }
         }
 
         /// <summary>

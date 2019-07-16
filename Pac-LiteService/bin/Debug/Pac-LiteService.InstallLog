@@ -1,0 +1,76 @@
+﻿Installing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Installing service PacLiteService...
+Service PacLiteService has been successfully installed.
+Creating EventLog source PacLiteService in log Application...
+Committing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Uninstalling assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Removing EventLog source PacLiteService.
+Service PacLiteService is being removed from the system...
+Service PacLiteService was successfully removed from the system.
+Installing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Installing service PacLiteService...
+Service PacLiteService has been successfully installed.
+Creating EventLog source PacLiteService in log Application...
+Committing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Uninstalling assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Removing EventLog source PacLiteService.
+Service PacLiteService is being removed from the system...
+Service PacLiteService was successfully removed from the system.
+Installing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Installing service PacLiteService...
+Service PacLiteService has been successfully installed.
+Creating EventLog source PacLiteService in log Application...
+Committing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Uninstalling assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Removing EventLog source PacLiteService.
+Service PacLiteService is being removed from the system...
+Service PacLiteService was successfully removed from the system.
+Installing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Installing service PacLiteService...
+Service PacLiteService has been successfully installed.
+Creating EventLog source PacLiteService in log Application...
+Committing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe

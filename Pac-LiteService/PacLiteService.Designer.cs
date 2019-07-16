@@ -1,6 +1,6 @@
 ﻿namespace Pac_LiteService
 {
-    partial class Service1
+    partial class PacLiteService
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,8 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            this.ServiceName = "Service1";
+            // 
+            // Service1
+            // 
+            this.ServiceName = "PacLiteService";
+
         }
 
         #endregion
