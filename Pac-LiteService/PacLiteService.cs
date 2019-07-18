@@ -39,6 +39,19 @@ namespace Pac_LiteService
             base.OnStop();
             CallOnStop();
         }
+        private void DiagnosticOut(string message)
+        {
+            try
+            {
+                using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
+                {
+                    DiagnosticWriter.WriteLine(message);
+                }
+            }
+            catch
+            {
+            }
+        }
 
         //above is winforms specific code. below should be portable to service.
         private TopicPublisher MainPublisher;//publishes to the Pac-Light Outbound topic
@@ -57,17 +70,16 @@ namespace Pac_LiteService
         private const string CamstarUsername = "AutoLoader";
         private const string CamstarPassword = "@utoLo@der";
         private const string QACamstarIP = "10.197.10.33";
-        private const string ProdCamstarIP = "0.0.0.0";
+        private const string ProdCamstarIP = "10.197.10.22";
         private const string ProdENG_DBDataSource = "10.197.10.26";
         private const string QAENG_DBDataSource = "10.197.10.37";
         private const string ENG_DBUserID = "camstaruser";
         private const string ENG_DBPassword = "c@mst@rus3r";
         private const string ENG_DBInitialCatalog = "Pac-LiteDb";
-        private const string MDEIP = "10.197.18.163";
-        private const Int32 CamstarPort = 2881;
-        private const Int32 MDEClientPort = 11000;
-        private const Int32 MDEPort = 0;
-        private const Int32 MDEOutPort = 12000;
+        private const string MDEIP = "10.197.18.163";//currently my ip for testing. once it is known to be working i have to get this ip from gerry.
+        private const int CamstarPort = 2881;
+        private const int MDEClientPort = 11000;
+        private const int MDEOutPort = 12000;
         private List<Disposable> ThingsToDispose;//whenever you make something that inherits from IDisposable and needs to be disposed add to this. iterates through at end disposing of items.
         private bool fixingconnection = false;
 
@@ -130,19 +142,6 @@ namespace Pac_LiteService
             }
         }
 
-        private void DiagnosticOut(string message)
-        {
-            try
-            {
-                using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
-                {
-                    DiagnosticWriter.WriteLine(message);
-                }
-            }
-            catch
-            {
-            }
-        }
 
         /// <summary>
         /// Called whenever a new machine is detected
