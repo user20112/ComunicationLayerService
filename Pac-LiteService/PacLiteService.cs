@@ -1,19 +1,12 @@
-﻿using Camstar.Utility;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Pac_LiteService.Comunications;
+﻿using Pac_LiteService.Comunications;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.ServiceProcess;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Pac_LiteService
 {
@@ -39,6 +32,7 @@ namespace Pac_LiteService
             base.OnStop();
             CallOnStop();
         }
+
         public void DiagnosticOut(string message)
         {
             try

@@ -34,7 +34,9 @@ namespace Pac_LiteService
         {
             MainForm = mainform;
         }
+
         #endregion Variable Section
+
         #region Packet Section
 
         /// <summary>
@@ -496,9 +498,10 @@ namespace Pac_LiteService
                 MainForm.DiagnosticOut(ex.ToString());
             }
         }
-        #endregion Packet Section
-        #region Connections/Resources/Misc
 
+        #endregion Packet Section
+
+        #region Connections/Resources/Misc
 
         /// <summary>
         /// Send message To Camstar and listen for a message back.
@@ -580,6 +583,7 @@ namespace Pac_LiteService
             }
             return result;
         }
+
         #endregion Connections/Resources/Misc
     }
 }

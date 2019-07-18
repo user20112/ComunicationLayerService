@@ -12,7 +12,6 @@ namespace Pac_LiteService
 {
     internal class EMPPackets
     {
-
         #region Variable Section
 
         private PacLiteService MainForm;
@@ -23,7 +22,9 @@ namespace Pac_LiteService
         {
             MainForm = mainform;
         }
-        #endregion VariableSection
+
+        #endregion Variable Section
+
         #region Packet Section
 
         /// <summary>
@@ -232,6 +233,7 @@ namespace Pac_LiteService
         {
             Publisher.SendMessage(message);//forward it to the warning topic
         }
+
         #endregion Packet Section
     }
 }
