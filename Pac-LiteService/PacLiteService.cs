@@ -134,7 +134,6 @@ namespace Pac_LiteService
         {
             try
             {
-
                 using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
                 {
                     DiagnosticWriter.WriteLine(message);
@@ -142,7 +141,6 @@ namespace Pac_LiteService
             }
             catch
             {
-
             }
         }
 
@@ -717,7 +715,6 @@ namespace Pac_LiteService
             }
             catch
             {
-
             }
             foreach (Disposable disposable in ThingsToDispose)
             {

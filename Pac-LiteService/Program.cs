@@ -48,7 +48,7 @@ namespace Pac_LiteService
                 Console.WriteLine("{0} Stopped", service.ServiceName);
             }
             while (true)
-            Thread.Sleep(1000);
+                Thread.Sleep(1000);
         }
     }
 }
