@@ -32,7 +32,7 @@ namespace Pac_LiteService
         /// </summary>
         public void IndexPacket(string message)
         {
-            MainForm.DiagnosticOut("EMPIndexPacketReceived!",2);
+            MainForm.DiagnosticOut("EMPIndexPacketReceived!", 2);
             string SQLString = "";
             try //try loop in case command fails.
             {
@@ -113,7 +113,7 @@ namespace Pac_LiteService
                         }
                     }
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted",2);//logit
+                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                 }
             }
             catch (Exception ex)
@@ -122,7 +122,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(IndexPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString(),1);
+                MainForm.DiagnosticOut(ex.ToString(), 1);
             }
         }
 
@@ -131,7 +131,7 @@ namespace Pac_LiteService
         /// </summary>
         public void WarningPacket(string message)
         {
-            MainForm.DiagnosticOut("EMPWarningPacketReceived!",3);
+            MainForm.DiagnosticOut("EMPWarningPacketReceived!", 3);
             Task.Run(() => SQLEMPWarningPacket(message));
             Task.Run(() => MQTTEMPWarningPacket(message));
         }
@@ -213,7 +213,7 @@ namespace Pac_LiteService
                         }
                     }
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted",2);//logit
+                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                 }
             }
             catch (Exception ex)
@@ -222,7 +222,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(WarningPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString(),1);
+                MainForm.DiagnosticOut(ex.ToString(), 1);
             }
         }
 
