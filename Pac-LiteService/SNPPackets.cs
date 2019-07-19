@@ -50,12 +50,28 @@ namespace Pac_LiteService
             string Line = receivedPacket["Line"].ToString();
             string Theo = receivedPacket["Theo"].ToString();
             int snp_ID = Convert.ToInt32((byte)message[2]);
+            string Errors = "[";
+            try
+            {
+                string ErrorString = receivedPacket["Errors"].ToString();
+                string[] ErrorArray = ErrorString.Split(',');
+                foreach (string error in ErrorArray)//foreach error add it to the Errors Section
+                {
+                    Errors += error + "] [bit] NOT NULL, [";
+                }
+                Errors = Errors.Substring(0, Errors.Length - 1);
+
+            }
+            catch//no errors are being recorded
+            {
+                Errors = "";
+            }
             try //try loop in case command fails.
             {
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                sqlStringBuilder.Append("	[MachineID] [int] NULL, [Good] [bit] NULL, [Bad] [bit] NULL, [Empty] [bit] NULL, [Attempt] [bit] NULL, [Error1] [bit] NULL, [Error2] [bit] NULL, [Error3] [bit] NULL, [Error4] [bit] NULL, [Other] [bit] NULL, [HeadNumber] [int] NULL ");
+                sqlStringBuilder.Append("	[MachineID] [int] NULL, [Good] [bit] NULL, [Bad] [bit] NULL, [Empty] [bit] NULL, [Attempt] [bit] NULL, " + Errors + " [Other] [bit] NULL, [HeadNumber] [int] NULL ");
                 sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                 sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
@@ -78,10 +94,10 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
-
+         
         /// <summary>
         /// Updates an existing machine based of machine name.
         /// </summary>
@@ -114,7 +130,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -147,7 +163,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -156,7 +172,7 @@ namespace Pac_LiteService
         /// </summary>
         public void IndexSummaryPacket(string message)
         {
-            MainForm.DiagnosticOut("Fifteen Minute Packet Received!");
+            MainForm.DiagnosticOut("Fifteen Minute Packet Received!",3);
             Task.Run(() => SQLIndexSummary(message));
             Task.Run(() => CamstarIndexSummary(message));
         }
@@ -166,7 +182,7 @@ namespace Pac_LiteService
         /// </summary>
         public void DowntimePacket(string message)
         {
-            MainForm.DiagnosticOut("DownTime Packet Received!");
+            MainForm.DiagnosticOut("DownTime Packet Received!",3);
             Task.Run(() => SQLDownTimePacket(message));//dont care about return.
             Task.Run(() => CamstarDowntimePacket(message));//dont care about return.
         }
@@ -176,7 +192,7 @@ namespace Pac_LiteService
         /// </summary>
         public void ShortTimeStatisticPacket(string message)
         {
-            MainForm.DiagnosticOut("Short Time Statistic Packet Received!");
+            MainForm.DiagnosticOut("Short Time Statistic Packet Received!",3);
             Task.Run(() => SQLShortTimeStatisticPacket(message));
             Task.Run(() => MDEShortTimeStatisticPacket(message));
         }
@@ -248,7 +264,7 @@ namespace Pac_LiteService
                     command.Parameters.AddWithValue("@Time", DateTime.Now);
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted");//logit
+                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted",2);//logit
                 }
             }
             catch (Exception ex)
@@ -257,7 +273,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(SQLIndexSummary, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -285,7 +301,7 @@ namespace Pac_LiteService
                 PacketStringBuilder.Append("]]></__name></Resource></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(QACamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(),2); }
         }
 
         /// <summary>
@@ -356,7 +372,7 @@ namespace Pac_LiteService
                     }
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted");//logit
+                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted",2);//logit
                 }
             }
             catch (Exception ex)
@@ -365,7 +381,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(SQLDownTimePacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -393,7 +409,7 @@ namespace Pac_LiteService
                 PacketStringBuilder.Append("]]></__name></Resource></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(QACamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(),1); }
         }
 
         /// <summary>
@@ -438,7 +454,7 @@ namespace Pac_LiteService
                     }
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted");//logit
+                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted",2);//logit
                 }
             }
             catch (Exception ex)
@@ -447,7 +463,7 @@ namespace Pac_LiteService
                 {
                     MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -495,7 +511,7 @@ namespace Pac_LiteService
             }
             catch (Exception ex)
             {
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -529,7 +545,7 @@ namespace Pac_LiteService
             }
             catch (Exception ex) // If an error occurred return null string
             {
-                MainForm.DiagnosticOut(ex.ToString());
+                MainForm.DiagnosticOut(ex.ToString(),1);
                 return "";
             }
         }

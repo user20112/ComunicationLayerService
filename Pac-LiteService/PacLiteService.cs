@@ -7,11 +7,11 @@ using System.Net.Sockets;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
-
 namespace Pac_LiteService
 {
     public partial class PacLiteService : ServiceBase
     {
+        int LogggingLevel = 5;
         public PacLiteService()
         {
             InitializeComponent();
@@ -20,7 +20,7 @@ namespace Pac_LiteService
 
         protected override void OnStart(string[] args)
         {
-            DiagnosticOut("here");
+            DiagnosticOut("Started up.",3);
             CallOnStart();
         }
 
@@ -33,13 +33,16 @@ namespace Pac_LiteService
             CallOnStop();
         }
 
-        public void DiagnosticOut(string message)
+        public void DiagnosticOut(string message,int LoggingLevel)
         {
             try
             {
-                using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
+                if(LoggingLevel<=LogggingLevel)
                 {
-                    DiagnosticWriter.WriteLine(message);
+                    using (StreamWriter DiagnosticWriter = File.AppendText(@"C:\Users\d.paddock\Desktop\Diagnostic.txt"))
+                    {
+                        DiagnosticWriter.WriteLine(message);
+                    }
                 }
             }
             catch
@@ -85,10 +88,10 @@ namespace Pac_LiteService
         {
             try
             {
-                DiagnosticOut(message);//log message and bits when it comes in.
-                DiagnosticOut("Packet Header =" + Convert.ToInt32(message[0]).ToString());
-                DiagnosticOut("Packet Type=" + Convert.ToInt32(message[1]).ToString());
-                DiagnosticOut("SNPID=" + Convert.ToInt32(message[2]).ToString());
+                DiagnosticOut(message,4);//log message and bits when it comes in.
+                DiagnosticOut("Packet Header =" + Convert.ToInt32(message[0]).ToString(),3);
+                DiagnosticOut("Packet Type=" + Convert.ToInt32(message[1]).ToString(),3);
+                DiagnosticOut("SNPID=" + Convert.ToInt32(message[2]).ToString(),3);
                 switch (Convert.ToInt32(message[0]))//switch packet header
                 {
                     case 1://this means its a SNP message
@@ -159,26 +162,26 @@ namespace Pac_LiteService
         {
             try
             {
-                DiagnosticOut("Connecting MainSubscriber");
+                DiagnosticOut("Connecting MainSubscriber",2);
                 MainInputSubsriber = new TopicSubscriber(SubTopicName, Broker, ClientID, ConsumerID);
                 MainInputSubsriber.OnMessageReceived += new MessageReceivedDelegate(MainInputSubsriber_OnmessageReceived);
                 ThingsToDispose.Add(new Disposable(nameof(MainInputSubsriber), MainInputSubsriber));//add to reference pile so it disposes of itself properly.
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { DiagnosticOut(ex.ToString(),1); }
             try
             {
-                DiagnosticOut("Connecting SNPPublisher");
+                DiagnosticOut("Connecting SNPPublisher",2);
                 SNPPackets.Publisher = new TopicPublisher(SNPPackets.TopicName, Broker);
                 ThingsToDispose.Add(new Disposable(nameof(SNPPackets.Publisher), SNPPackets.Publisher));
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { DiagnosticOut(ex.ToString(),1); }
             try
             {
-                DiagnosticOut("Connecting SNPPublisher");
+                DiagnosticOut("Connecting SNPPublisher",2);
                 EMPPackets.Publisher = new TopicPublisher(EMPPackets.TopicName, Broker);
                 ThingsToDispose.Add(new Disposable(nameof(EMPPackets.Publisher), EMPPackets.Publisher));
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { DiagnosticOut(ex.ToString(),1); }
         }
 
         /// <summary>
@@ -189,19 +192,17 @@ namespace Pac_LiteService
             try
             {
                 // Build connection string
-                DiagnosticOut("Connecting SQL Database");
+                DiagnosticOut("Connecting SQL Database",2);
                 SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
                 builder.DataSource = QAENG_DBDataSource;
                 builder.UserID = ENG_DBUserID;
                 builder.Password = ENG_DBPassword;
                 builder.InitialCatalog = ENG_DBInitialCatalog;
-                // Connect to SQL
-                Console.Write("Connecting to SQL Server ... ");
                 ENGDBConnection = new SqlConnection(builder.ConnectionString);
                 ENGDBConnection.Open();
                 ThingsToDispose.Add(new Disposable(nameof(ENGDBConnection), ENGDBConnection));
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { DiagnosticOut(ex.ToString(),1); }
         }
 
         /// <summary>
@@ -216,13 +217,13 @@ namespace Pac_LiteService
         /// </summary>
         private void UDPConnections()
         {
-            DiagnosticOut("Connecting to MDE");
+            DiagnosticOut("Connecting to MDE",2);
             try
             {
                 SNPPackets.MDEClient = new UdpClient(SNPPackets.MDEOutPort);
                 ThingsToDispose.Add(new Disposable(nameof(SNPPackets.MDEClient), SNPPackets.MDEClient));
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString()); }
+            catch (Exception ex) { DiagnosticOut(ex.ToString(),1); }
         }
 
         /// <summary>
@@ -242,9 +243,9 @@ namespace Pac_LiteService
                 try
                 {
                     disposable.Dispose();//dispose of connections on stop they will be reestablished on start.
-                    DiagnosticOut(disposable.Name + "Has been Disconected and Disposed");
+                    DiagnosticOut(disposable.Name + "Has been Disconected and Disposed",2);
                 }
-                catch (Exception ex) { DiagnosticOut(disposable.Name + ex.ToString()); }
+                catch (Exception ex) { DiagnosticOut(disposable.Name + ex.ToString(),1); }
             }
         }
 
@@ -265,7 +266,7 @@ namespace Pac_LiteService
             }
             catch (Exception ex)
             {
-                DiagnosticOut(ex.ToString());
+                DiagnosticOut(ex.ToString(),1);
             }
         }
 
@@ -286,18 +287,17 @@ namespace Pac_LiteService
                 fixingconnection = true;
                 try
                 {
-                    DiagnosticOut("Connecting SQL Database");
+                    DiagnosticOut("Connecting SQL Database",2);
                     SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
                     builder.DataSource = QAENG_DBDataSource;
                     builder.UserID = ENG_DBUserID;
                     builder.Password = ENG_DBPassword;
                     builder.InitialCatalog = ENG_DBInitialCatalog;
-                    Console.Write("Connecting to SQL Server ... ");
                     ENGDBConnection = new SqlConnection(builder.ConnectionString);
                     ENGDBConnection.Open();
                     ThingsToDispose.Add(new Disposable(nameof(ENGDBConnection), ENGDBConnection));
                 }
-                catch (Exception ex) { DiagnosticOut(ex.ToString()); }
+                catch (Exception ex) { DiagnosticOut(ex.ToString(),1); }
                 fixingconnection = false;
             }
             functionThatFailed(message);
