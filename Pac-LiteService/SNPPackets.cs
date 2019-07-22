@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -20,19 +21,25 @@ namespace Pac_LiteService
         private PacLiteService MainForm;
         public TopicPublisher Publisher;//publishes to the Pac-Light Outbound topic
         public UdpClient MDEClient;
-        public const string TopicName = "SNP.Outbound";
-        private const string CamstarUsername = "AutoLoader";
-        private const string CamstarPassword = "@utoLo@der";
-        private const string QACamstarIP = "10.197.10.33";
-        private const string ProdCamstarIP = "10.197.10.22";
-        private const string MDEIP = "10.197.18.163";//currently my ip for SNPing. once it is known to be working i have to get this ip from gerry.
-        private const int CamstarPort = 2881;
-        private const int MDEClientPort = 11000;
-        public const int MDEOutPort = 12000;
+        public string TopicName = "SNP.Outbound";
+        private string CamstarUsername;
+        private string CamstarPassword;
+        private string CamstarIP;
+        private string MDEIP;//currently my ip for MDEing. once it is known to be working i have to get this ip from gerry.
+        private int CamstarPort;
+        private int MDEClientPort;
+        public int MDEOutPort;
 
         public SNPPackets(PacLiteService mainform)
         {
             MainForm = mainform;
+            CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];
+            CamstarPassword = ConfigurationManager.AppSettings["CamstarPassword"];
+            CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];
+            MDEIP = ConfigurationManager.AppSettings["MDEIP"];
+            CamstarPort = Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"]);
+            MDEClientPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEClientPort"]);
+            MDEOutPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEOutPort"]);
         }
 
         #endregion Variable Section
@@ -284,21 +291,30 @@ namespace Pac_LiteService
             string DataReceived;
             try
             {
+                /*
+                <?xml version=\"1.0\" encoding=\"utf-16\"?><__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user>
+                <__name>username</__name>
+                </user><password __encrypted=\"no\">Password</password>
+                </__connect><__filter><__allowUntaggedInstances><![CDATA[3]]></__allowUntaggedInstances></__filter></__session><__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>
+                <__name><![CDATA[MfgOrder]]></__name></MfgOrder><Product>
+                <__name><![CDATA[ProductNaed]]></__name><__useROR><![CDATA[true]]></__useROR></Product>
+                <Qty><![CDATA[QTY]]></Qty><Resource>
+                <__name><![CDATA[RESOURCE]]></__name>
+                </Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><UOM><__name><![CDATA[UnitOfMesure]]>
+                </__name></UOM></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>
+                */
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
-                PacketStringBuilder.Append("<__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user><__name>");
-                PacketStringBuilder.Append(CamstarUsername);//username
-                PacketStringBuilder.Append("</__name></user><password __encrypted=\"no\">");
-                PacketStringBuilder.Append(CamstarPassword);//password
-                PacketStringBuilder.Append("</password></__connect><__filter><__allowUntaggedInstances><![CDATA[3]]></__allowUntaggedInstances></__filter></__session><__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Product><__name><![CDATA[");
-                PacketStringBuilder.Append(receivedPacket["Naed"]);//productNaed
-                PacketStringBuilder.Append("]]></__name><__useROR><![CDATA[true]]></__useROR></Product><Qty><![CDATA[");
-                PacketStringBuilder.Append(receivedPacket["Good"]);//qty
-                PacketStringBuilder.Append("]]></Qty><Resource><__name><![CDATA[");
-                PacketStringBuilder.Append(receivedPacket["Machine"]);//resource
-                PacketStringBuilder.Append("]]></__name></Resource></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
-                DataReceived = Sendmessage(QACamstarIP, CamstarPort, PacketStringBuilder.ToString());
+                PacketStringBuilder.Append("<?xml version=\"1.0\" encoding=\"utf-16\"?><__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user><__name>" + CamstarUsername + "</__name></user><password __encrypted=\"yes\">" + Camstar.Util.CryptUtil.Encrypt(CamstarPassword) + "</password></__connect>");
+                PacketStringBuilder.Append("<__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>");
+                PacketStringBuilder.Append("<__name><![CDATA[]]></__name></MfgOrder><Product>");
+                PacketStringBuilder.Append("< __name >< ![CDATA[" + receivedPacket["Naed"] + "]] ></ __name >< __useROR >< ![CDATA[true]] ></ __useROR ></ Product > ");//productNaed
+                PacketStringBuilder.Append("< Qty >< ![CDATA[" + receivedPacket["Good"] + "]] ></ Qty >< Resource >");
+                PacketStringBuilder.Append("< __name >< ![CDATA[" + receivedPacket["Machine"] + "]] ></ __name >");//qty
+                PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><UOM><__name><![CDATA[EA]]>");
+                PacketStringBuilder.Append("</__name></UOM></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");//resource
+                DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
             catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(), 2); }
         }
@@ -392,23 +408,27 @@ namespace Pac_LiteService
             string DataReceived;
             try
             {
+                /*
+            <__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>
+            <__name><![CDATA[zzzCIO_1Loader]]></__name>
+            </Resource><ResourceGroup><__name><![CDATA[CIO_1ResourceGrp]]></__name></ResourceGroup><ResourceStatusCode>
+            <__name><![CDATA[Alarm]]></__name>
+            </ResourceStatusCode><ResourceStatusReason><__name><![CDATA[2]]></__name>
+            </ResourceStatusReason></__inputData><__execute /><__requestData><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData></__service></__InSite>
+*/
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
-                PacketStringBuilder.Append("<__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user><__name>");
-                PacketStringBuilder.Append(CamstarUsername);//username
-                PacketStringBuilder.Append("</__name></user><password __encrypted=\"no\">");
-                PacketStringBuilder.Append(CamstarPassword);//password
-                PacketStringBuilder.Append("</password></__connect><__filter><__allowUntaggedInstances><![CDATA[3]]></__allowUntaggedInstances></__filter></__session><__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Product><__name><![CDATA[");
-                PacketStringBuilder.Append(receivedPacket["Naed"]);//productNaed
-                PacketStringBuilder.Append("]]></__name><__useROR><![CDATA[true]]></__useROR></Product><Qty><![CDATA[");
-                PacketStringBuilder.Append(receivedPacket["Good"]);//qty
-                PacketStringBuilder.Append("]]></Qty><Resource><__name><![CDATA[");
-                PacketStringBuilder.Append(receivedPacket["Machine"]);//resource
-                PacketStringBuilder.Append("]]></__name></Resource></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
-                DataReceived = Sendmessage(QACamstarIP, CamstarPort, PacketStringBuilder.ToString());
+                PacketStringBuilder.Append("<?xml version=\"1.0\" encoding=\"utf-16\"?><__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user><__name>" + CamstarUsername + "</__name></user><password __encrypted=\"yes\">" + Camstar.Util.CryptUtil.Encrypt(CamstarPassword) + "</password></__connect></__session>");
+                PacketStringBuilder.Append("<__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
+                PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
+                PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[CIO_1ResourceGrp]]></__name></ResourceGroup><ResourceStatusCode>");
+                PacketStringBuilder.Append("<__name><![CDATA[Alarm]]></__name>");//Reason
+                PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[2]]></__name>");//resource status code
+                PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite > ");
+                DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(), 1); }
+            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(), 2); }
         }
 
         /// <summary>
