@@ -15,7 +15,6 @@ namespace Pac_LiteService
 {
     public partial class PacLiteService : ServiceBase
     {
-
         public PacLiteService()
         {
             InitializeComponent();
@@ -56,7 +55,7 @@ namespace Pac_LiteService
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
             }
         }

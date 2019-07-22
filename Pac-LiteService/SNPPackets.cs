@@ -64,7 +64,7 @@ namespace Pac_LiteService
                 string[] ErrorArray = ErrorString.Split(',');
                 foreach (string error in ErrorArray)//foreach error add it to the Errors Section
                 {
-                    Errors += error + "] [bit] NOT NULL, [";
+                    Errors += error + "] [bit] NULL, [";
                 }
                 Errors = Errors.Substring(0, Errors.Length - 1);
             }
@@ -121,6 +121,27 @@ namespace Pac_LiteService
                 sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
                 sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();//convert to string
+                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
+                {
+                    command.Parameters.AddWithValue("@machine", machineName);
+                    command.Parameters.AddWithValue("@Line", Line);
+                    command.Parameters.AddWithValue("@SNPID", snp_ID);
+                    command.Parameters.AddWithValue("@Theo", Theo);
+                    command.ExecuteNonQuery();// execute the command returning number of rows affected
+                }
+                sqlStringBuilder = new StringBuilder();
+                sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
+                sqlStringBuilder.Append("Alter Table " + receivedPacket["Machine"] + "ShortTimeStatistics");
+                string ErrorString = receivedPacket["Errors"].ToString();
+                string[] ErrorArray = ErrorString.Split(',');
+                string Errors = "[";
+                foreach (string error in ErrorArray)//foreach error add it to the Errors Section
+                {
+                    Errors += (error + "] [bit] NULL, [");
+                }
+                Errors = Errors.Substring(0, Errors.Length - 3);
+                sqlStringBuilder.Append(Errors + ";");
+                SQLString = sqlStringBuilder.ToString();//convert to string
                 using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
                 {
                     command.Parameters.AddWithValue("@machine", machineName);
@@ -215,7 +236,7 @@ namespace Pac_LiteService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "(");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
@@ -332,7 +353,7 @@ namespace Pac_LiteService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "DownTimes (");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
@@ -443,7 +464,7 @@ namespace Pac_LiteService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"].ToString() + "ShortTimeStatistics (");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "[";
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
@@ -497,11 +518,12 @@ namespace Pac_LiteService
                 List<bool> bits = new List<bool>();
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                keys.Sort();
                 foreach (string key in keys)
                 {
                     if (key != "Machine" && key != "Theo" && key != "HeadNumber")
-                        bits.Add(Convert.ToInt32(receivedPacket[key] ?? '0') == 1); // if the key's value is null set bit to false, otherwise set it to the bit.
+                        bits.Add(Convert.ToInt32(receivedPacket[key] ?? 0) == 1); // if the key's value is null set bit to false, otherwise set it to the bit.
                 }
                 bySNPoSend.Add((byte)'~');
                 for (int Index = 0; Index < bits.Count; Index += 8)

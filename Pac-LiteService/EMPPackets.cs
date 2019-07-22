@@ -40,7 +40,7 @@ namespace Pac_LiteService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append("INSERT INTO EMPTable (");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";
                 string valueSection = "";
                 bool MissingStamp = true;
@@ -148,7 +148,7 @@ namespace Pac_LiteService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append("INSERT INTO EMPWarningTable (");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";
                 string valueSection = "";
                 bool MissingStamp = true;

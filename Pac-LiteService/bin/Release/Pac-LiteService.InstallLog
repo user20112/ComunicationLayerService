@@ -130,3 +130,37 @@ Removing EventLog source PacLiteService.
 Service PacLiteService is being removed from the system...
 Service PacLiteService was successfully removed from the system.
 Attempt to stop service PacLiteService.
+Installing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe
+Installing service PacLiteService...
+Creating EventLog source PacLiteService in log Application...
+Rolling back assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe
+Restoring event log to previous state for source PacLiteService.
+Uninstalling assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe
+Removing EventLog source PacLiteService.
+Service PacLiteService is being removed from the system...
+Service PacLiteService was successfully removed from the system.
+Installing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe
+Installing service PacLiteService...
+Service PacLiteService has been successfully installed.
+Creating EventLog source PacLiteService in log Application...
+Committing assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Release\Pac-LiteService.exe

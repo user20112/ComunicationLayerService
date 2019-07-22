@@ -1,15 +1,11 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Pac_LiteService
 {
-    class ControlPackets
+    internal class ControlPackets
     {
         private PacLiteService MainForm;
 
@@ -33,7 +29,6 @@ namespace Pac_LiteService
                     MainForm.LogggingLevel = OldSetting;
                     MainForm.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 2);
                 }
-
             }
             catch (Exception ex)
             {
