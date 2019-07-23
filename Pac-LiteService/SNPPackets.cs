@@ -57,6 +57,8 @@ namespace Pac_LiteService
             string Line = receivedPacket["Line"].ToString();
             string Theo = receivedPacket["Theo"].ToString();
             int snp_ID = Convert.ToInt32((byte)message[2]);
+            string Plant = receivedPacket["Plant"].ToString();
+            string Engineer = receivedPacket["Engineer"].ToString();
             string Errors = "[";
             try
             {
@@ -66,7 +68,7 @@ namespace Pac_LiteService
                 {
                     Errors += error + "] [bit] NULL, [";
                 }
-                Errors = Errors.Substring(0, Errors.Length - 1);
+                Errors = Errors.Substring(0, Errors.Length - 3);
             }
             catch//no errors are being recorded
             {
@@ -77,13 +79,13 @@ namespace Pac_LiteService
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                sqlStringBuilder.Append("	[MachineID] [int] NULL, [Good] [bit] NULL, [Bad] [bit] NULL, [Empty] [bit] NULL, [Attempt] [bit] NULL, " + Errors + " [Other] [bit] NULL, [HeadNumber] [int] NULL ");
+                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,TimeStamp [date] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors );
                 sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                 sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
                 sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
-                sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo) values( @machine , @Line , @SNPID , @Theo);");
+                sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
                 string SQLString = sqlStringBuilder.ToString();//convert to string
                 using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
                 {
@@ -91,6 +93,8 @@ namespace Pac_LiteService
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
                     command.Parameters.AddWithValue("@Theo", Theo);
+                    command.Parameters.AddWithValue("@Plant", Plant);
+                    command.Parameters.AddWithValue("@Engineer", Engineer);
                     command.ExecuteNonQuery();// execute the command returning number of rows affected
                 }
             }
@@ -131,7 +135,7 @@ namespace Pac_LiteService
                 }
                 sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
-                sqlStringBuilder.Append("Alter Table " + receivedPacket["Machine"] + "ShortTimeStatistics");
+                sqlStringBuilder.Append("Alter Table " + receivedPacket["Machine"] + "ShortTimeStatistics ADD ");
                 string ErrorString = receivedPacket["Errors"].ToString();
                 string[] ErrorArray = ErrorString.Split(',');
                 string Errors = "[";
@@ -221,7 +225,7 @@ namespace Pac_LiteService
         {
             MainForm.DiagnosticOut("Short Time Statistic Packet Received!", 3);
             Task.Run(() => SQLShortTimeStatisticPacket(message));
-            Task.Run(() => MDEShortTimeStatisticPacket(message));
+            //Task.Run(() => MDEShortTimeStatisticPacket(message)); allows comunication to MDE on a udp port.
         }
 
         /// <summary>
@@ -469,22 +473,22 @@ namespace Pac_LiteService
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
                 {
-                    if (key != "Machine" && key != "Theo")//except machine as it is used as the table name.
+                    if (key != "Machine" && key != "Theo"&&key!="TimeStamp")//except machine as it is used as the table name.
                     {
                         keySection += key + "], [";//Make a key
                         valueSection += "@" + key + ", ";//and value Reference to be replaced later
                     }
                 }
-                keySection += "MachineID] ";
-                valueSection += "MachineID ";
+                keySection += "MachineID], [TimeStamp] ";
+                valueSection += "MachineID, @TimeStamp ";
                 sqlStringBuilder.Append(keySection + ")");
-                sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine ;");//append both to the command string
+                sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine;");//append both to the command string
                 SQLString = sqlStringBuilder.ToString();//convert to string
                 using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
                 {
                     foreach (string key in keys)//foreach key
                     {
-                        if (key != "Machine" && key != "Theo")
+                        if (key != "Machine" && key != "Theo"&&key!="TimeStamp")
                             if (key != "HeadNumber")
                             {
                                 command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
@@ -492,6 +496,14 @@ namespace Pac_LiteService
                             else
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                     }
+                    string TimeStamp = receivedPacket["TimeStamp"].ToString();
+                    int year = 2000 + Convert.ToInt32(TimeStamp.Substring(0, 2));
+                    int month = Convert.ToInt32(TimeStamp.Substring(3, 2));
+                    int day = Convert.ToInt32(TimeStamp.Substring(6, 2));
+                    int hour = Convert.ToInt32(TimeStamp.Substring(9, 2));
+                    int minute = Convert.ToInt32(TimeStamp.Substring(12, 2));
+                    int second = Convert.ToInt32(TimeStamp.Substring(15, 2));
+                    command.Parameters.AddWithValue("@TimeStamp", new DateTime(year, month, day, hour, minute, second));
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
                     MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit

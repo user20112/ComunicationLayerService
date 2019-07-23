@@ -24,3 +24,4 @@ C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\Pac-LiteService.csproj.CopyComplete
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\Pac-LiteService.exe
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\Pac-LiteService.pdb
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\Pac-LiteService.csprojAssemblyReference.cache
