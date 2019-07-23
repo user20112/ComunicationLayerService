@@ -349,7 +349,6 @@ namespace Pac_LiteService
         /// </summary>
         private void SQLDownTimePacket(string message)
         {
-            string downtime;
             string SQLString = "";
             try //try loop in case command fails.
             {
@@ -362,14 +361,14 @@ namespace Pac_LiteService
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
                 {
-                    if (key == "Status" || key == "Time" || key == "NAED" || key == "MReason" || key == "UReason")//except machine as it is used as the table name.
+                    if (key == "Status" || key == "NAED" || key == "MReason" || key == "UReason")//except machine as it is used as the table name.
                     {
                         keySection += key + ", ";//Make a key
                         valueSection += "@" + key + ", ";//and value Reference to be replaced later
                     }
                 }
-                keySection += "MachineID ";
-                valueSection += "MachineID ";
+                keySection += "MachineID , Time ";
+                valueSection += "MachineID ,@Time ";
                 sqlStringBuilder.Append(keySection + ")");
                 sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine ;");//append both to the command string
                 SQLString = sqlStringBuilder.ToString();//convert to string
@@ -382,18 +381,6 @@ namespace Pac_LiteService
                             case "Status":
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                                 break;
-
-                            case "Time":
-                                downtime = receivedPacket[key].ToString();
-                                int year = 2000 + Convert.ToInt32(downtime.Substring(0, 2));
-                                int month = Convert.ToInt32(downtime.Substring(3, 2));
-                                int day = Convert.ToInt32(downtime.Substring(6, 2));
-                                int hour = Convert.ToInt32(downtime.Substring(9, 2));
-                                int minute = Convert.ToInt32(downtime.Substring(12, 2));
-                                int second = Convert.ToInt32(downtime.Substring(15, 2));
-                                command.Parameters.AddWithValue("@" + key, new DateTime(year, month, day, hour, minute, second));
-                                break;
-
                             case "NAED":
                                 command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
                                 break;
@@ -411,6 +398,7 @@ namespace Pac_LiteService
                         }
                     }
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
+                    command.Parameters.AddWithValue("@Time", DateTime.Now);
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
                     MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                 }
@@ -473,7 +461,7 @@ namespace Pac_LiteService
                 string valueSection = "";
                 foreach (string key in keys)//foreach key
                 {
-                    if (key != "Machine" && key != "Theo"&&key!="TimeStamp")//except machine as it is used as the table name.
+                    if (key != "Machine" &&key!="TimeStamp")//except machine as it is used as the table name.
                     {
                         keySection += key + "], [";//Make a key
                         valueSection += "@" + key + ", ";//and value Reference to be replaced later
@@ -488,7 +476,7 @@ namespace Pac_LiteService
                 {
                     foreach (string key in keys)//foreach key
                     {
-                        if (key != "Machine" && key != "Theo"&&key!="TimeStamp")
+                        if (key != "Machine" )
                             if (key != "HeadNumber")
                             {
                                 command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
@@ -496,14 +484,7 @@ namespace Pac_LiteService
                             else
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                     }
-                    string TimeStamp = receivedPacket["TimeStamp"].ToString();
-                    int year = 2000 + Convert.ToInt32(TimeStamp.Substring(0, 2));
-                    int month = Convert.ToInt32(TimeStamp.Substring(3, 2));
-                    int day = Convert.ToInt32(TimeStamp.Substring(6, 2));
-                    int hour = Convert.ToInt32(TimeStamp.Substring(9, 2));
-                    int minute = Convert.ToInt32(TimeStamp.Substring(12, 2));
-                    int second = Convert.ToInt32(TimeStamp.Substring(15, 2));
-                    command.Parameters.AddWithValue("@TimeStamp", new DateTime(year, month, day, hour, minute, second));
+                    command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
                     MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
