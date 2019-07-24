@@ -7,7 +7,6 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -18,28 +17,32 @@ namespace Pac_LiteService
     {
         #region Variable Section
 
-        private PacLiteService MainForm;
-        public TopicPublisher Publisher;//publishes to the Pac-Light Outbound topic
-        public UdpClient MDEClient;
-        public string TopicName = "SNP.Outbound";
-        private string CamstarUsername;
-        private string CamstarPassword;
-        private string CamstarIP;
-        private string MDEIP;//currently my ip for MDEing. once it is known to be working i have to get this ip from gerry.
-        private int CamstarPort;
-        private int MDEClientPort;
-        public int MDEOutPort;
+        private PacLiteService Controller;                                                  // Contains either the service or form that owns this class.
+        //public TopicPublisher Publisher;                                                    // publishes to the Pac-Light Outbound topic
 
-        public SNPPackets(PacLiteService mainform)
+        //public UdpClient MDEClient;                                                         // depreciated comunication to MDE over udp
+        //public string TopicName = "SNP.Outbound";                                           // Test Output topic
+        private string CamstarUsername;                                                     // username used to comunicate with camstar
+
+        private string CamstarPassword;                                                     // password used to ocmunicate with camstar
+        private string CamstarIP;                                                           // IP of the Camstar System you are talking to
+
+        //private string MDEIP;                                                               // currently my ip for MDEing. once it is known to be working i have to get this ip from gerry.
+        private int CamstarPort;                                                            // Port of the Camstar system you are talking to
+
+        //private int MDEClientPort;                                                          // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
+        //public int MDEOutPort;                                                              // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
+
+        public SNPPackets(PacLiteService controller)
         {
-            MainForm = mainform;
-            CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];
-            CamstarPassword = ConfigurationManager.AppSettings["CamstarPassword"];
-            CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];
-            MDEIP = ConfigurationManager.AppSettings["MDEIP"];
-            CamstarPort = Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"]);
-            MDEClientPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEClientPort"]);
-            MDEOutPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEOutPort"]);
+            Controller = controller;                                                        //set the owner of this class
+            CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];          // pull Camstar username
+            CamstarPassword = ConfigurationManager.AppSettings["CamstarPassword"];          //and camstar password
+            CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];                      //and camstar ip
+            //MDEIP = ConfigurationManager.AppSettings["MDEIP"];                              //and MDE Ip deprecieted as MDE is no longer used
+            CamstarPort = Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"]); //and Camstar Port
+            //MDEClientPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEClientPort"]);//and MDE Ports deprecieted as mde is no longer used
+            //MDEOutPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEOutPort"]); //from app.config
         }
 
         #endregion Variable Section
@@ -48,174 +51,182 @@ namespace Pac_LiteService
 
         /// <summary>
         /// Called whenever a new machine is detected
+        /// Creates all required databases and entries for the machine detaield in the packet.
         /// </summary>
         public void NewMachinePacket(string message)
         {
-            string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-            string machineName = receivedPacket["Machine"].ToString();
+            Controller.DiagnosticOut("New Machine Packet!", 2);                             // log the packet as have been received
+            string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
+            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert the json to an object
+            string machineName = receivedPacket["Machine"].ToString();                      //get the important sections of the packet out ( that arent errors)
             string Line = receivedPacket["Line"].ToString();
             string Theo = receivedPacket["Theo"].ToString();
-            int snp_ID = Convert.ToInt32((byte)message[2]);
+            int snp_ID = Convert.ToInt32((byte)message[2]);                                 //get the SNP ID from the message header
             string Plant = receivedPacket["Plant"].ToString();
             string Engineer = receivedPacket["Engineer"].ToString();
-            string Errors = "[";
-            try
+            string Errors = "";                                                             //Start Errors as blank
+            try                                                                             //If this fails break dont break the application
             {
-                string ErrorString = receivedPacket["Errors"].ToString();
-                string[] ErrorArray = ErrorString.Split(',');
-                foreach (string error in ErrorArray)//foreach error add it to the Errors Section
+                string ErrorString = receivedPacket["Errors"].ToString();                   //Get all errors passed in
+                string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
+                foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                 {
-                    Errors += error + "] [bit] NULL, [";
+                    Errors += "[" + error + "] [bit] NULL, ";                               //set the feild type to bit and allow it to be nullable
                 }
-                Errors = Errors.Substring(0, Errors.Length - 3);
+                Errors = Errors.Substring(0, Errors.Length - 2);                            //remove extra comma and space
             }
-            catch//no errors are being recorded
+            catch                                                                           //if this fails set it to defualt no errors
             {
                 Errors = "";
             }
-            try //try loop in case command fails.
+            try                                                                             //try loop in case command fails.
             {
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //this builder will build the SQL String
+                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");//Load the create tables with defualt table information using MachineName as the resource name
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,TimeStamp [date] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors );
+                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,TimeStamp [date] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
                 sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                 sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
                 sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
                 sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
-                string SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    command.Parameters.AddWithValue("@machine", machineName);
+                string SQLString = sqlStringBuilder.ToString();                             //Convert the builder to the string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Commmand Time!
+                    command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with their respective values
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
                     command.Parameters.AddWithValue("@Theo", Theo);
                     command.Parameters.AddWithValue("@Plant", Plant);
                     command.Parameters.AddWithValue("@Engineer", Engineer);
-                    command.ExecuteNonQuery();// execute the command returning number of rows affected
+                    int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
+                    Controller.ReastablishSQL(NewMachinePacket, message);                   //reastablish it
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
             }
         }
 
         /// <summary>
-        /// Updates an existing machine based of machine name.
+        /// Updates an existing machine based of machine name. addeds errors as new columns as well.
         /// </summary>
         public void EditMachinePacket(string message)
         {
-            string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-            string machineName = receivedPacket["Machine"].ToString();
+            Controller.DiagnosticOut("Edit Machine Packet!", 2);                            // log the packet as have been received
+            string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
+            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //Convert it into a jobject
+            string machineName = receivedPacket["Machine"].ToString();                      //gather important sections into variables
             string Line = receivedPacket["Line"].ToString();
             string Theo = receivedPacket["Theo"].ToString();
-            int snp_ID = Convert.ToInt32((byte)message[2]);
-            try //try loop in case command fails.
+            int snp_ID = Convert.ToInt32((byte)message[2]);                                 //get snp id from message header
+            try                                                                             //try loop in case command fails.
             {
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder to build the sql
+                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");                             //load the edit command using Machine as the resource name
                 sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo where MachineName = @machine;");
-                string SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    command.Parameters.AddWithValue("@machine", machineName);
+                string SQLString = sqlStringBuilder.ToString();                             //convert the builder to a string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //command time!
+                    command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with values
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
                     command.Parameters.AddWithValue("@Theo", Theo);
-                    command.ExecuteNonQuery();// execute the command returning number of rows affected
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
-                sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
+                sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
+                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");                             //load alter table command
                 sqlStringBuilder.Append("Alter Table " + receivedPacket["Machine"] + "ShortTimeStatistics ADD ");
-                string ErrorString = receivedPacket["Errors"].ToString();
-                string[] ErrorArray = ErrorString.Split(',');
-                string Errors = "[";
-                foreach (string error in ErrorArray)//foreach error add it to the Errors Section
+                string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
+                string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
+                string Errors = "";                                                         //this string is added to the sql
+                foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                 {
-                    Errors += (error + "] [bit] NULL, [");
+                    Errors += ("[" + error + "] [bit] NULL, ");                             //column is a bit feild that is nullable
                 }
-                Errors = Errors.Substring(0, Errors.Length - 3);
-                sqlStringBuilder.Append(Errors + ";");
-                SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    command.Parameters.AddWithValue("@machine", machineName);
+                Errors = Errors.Substring(0, Errors.Length - 2);                            //remove extra space and comma
+                sqlStringBuilder.Append(Errors + ";");                                      //append a semicolon
+                SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Comand Time Again!
+                    command.Parameters.AddWithValue("@machine", machineName);               //set parameters to their values
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
                     command.Parameters.AddWithValue("@Theo", Theo);
-                    command.ExecuteNonQuery();// execute the command returning number of rows affected
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                            //catch exceptions
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
+                    Controller.ReastablishSQL(EditMachinePacket, message);                  //reestablish connection
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
         /// <summary>
-        /// Deletes existing machine
+        /// Deletes existing machine ( deletes the Machine Info entry and all databases asociated with it
         /// </summary>
         public void DeleteMachinePacket(string message)
         {
-            string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-            string machineName = receivedPacket["Machine"].ToString();
-            try //try loop in case command fails.
+            Controller.DiagnosticOut("Delete Machine Packet!", 2);                          // log the packet as have been received
+            string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
+            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert it to a Jobject
+            string machineName = receivedPacket["Machine"].ToString();                      //get the machine name in a nice easy feild
+            try                                                                             //try loop in case command fails.
             {
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append(" USE [Pac-LiteDb ] ");
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder for sql command
+                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");                             //load sql command and edit for machine name as the resource name
                 sqlStringBuilder.Append(" delete from MachineInfoTable where MachineName = @machine;");//drop the reference
                 sqlStringBuilder.Append("drop table [" + machineName + "];");
                 sqlStringBuilder.Append("drop table [" + machineName + "DownTimes];");
                 sqlStringBuilder.Append("drop table [" + machineName + "ShortTimeStatistics];");
-                string SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());
-                    command.ExecuteNonQuery();// execute the command returning number of rows affected
+                string SQLString = sqlStringBuilder.ToString();                             //Convert builder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Comand Time!
+                    command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());//replace parameters with values
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                            //catche exceptions
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
+                    Controller.ReastablishSQL(DeleteMachinePacket, message);                //restablish the connection
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
         /// <summary>
-        /// Summary packet received every fifteen minutes from the plc.
+        /// Summary packet received every fifteen minutes from the plc. Send a throughput packet to camstar and record the data in sql
         /// </summary>
         public void IndexSummaryPacket(string message)
         {
-            MainForm.DiagnosticOut("Fifteen Minute Packet Received!", 3);
-            Task.Run(() => SQLIndexSummary(message));
-            Task.Run(() => CamstarIndexSummary(message));
+            Controller.DiagnosticOut("Fifteen Minute Packet Received!", 3);                 //logit
+            Task.Run(() => SQLIndexSummary(message));                                       //save data to sql async, return value doesnt matter
+            Task.Run(() => CamstarIndexSummary(message));                                   //send data to Camstar, return value doesnt matter
         }
 
         /// <summary>
-        ///  Packet sent each time there is a Downtime received from SNP
+        ///  Packet sent each time there is a Downtime received from SNP record in sql and send a downtime packet to camstar
         /// </summary>
         public void DowntimePacket(string message)
         {
-            MainForm.DiagnosticOut("DownTime Packet Received!", 3);
-            Task.Run(() => SQLDownTimePacket(message));//dont care about return.
-            Task.Run(() => CamstarDowntimePacket(message));//dont care about return.
+            Controller.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
+            Task.Run(() => SQLDownTimePacket(message));                                     //Save data to SQL, return value doesnt matter
+            Task.Run(() => CamstarDowntimePacket(message));                                 //send data to Camstar, return value doesnt matter
         }
 
         /// <summary>
@@ -223,88 +234,61 @@ namespace Pac_LiteService
         /// </summary>
         public void ShortTimeStatisticPacket(string message)
         {
-            MainForm.DiagnosticOut("Short Time Statistic Packet Received!", 3);
-            Task.Run(() => SQLShortTimeStatisticPacket(message));
-            //Task.Run(() => MDEShortTimeStatisticPacket(message)); allows comunication to MDE on a udp port.
+            Controller.DiagnosticOut("Short Time Statistic Packet Received!", 3);           //logit
+            Task.Run(() => SQLShortTimeStatisticPacket(message));                           //Save data to sql return value doesnt matter
+            //Task.Run(() => MDEShortTimeStatisticPacket(message));                         //Send Message to UDP port for MDE (depreciated but kept for incasei t is used elsewhere
         }
 
         /// <summary>
-        ///
+        /// SQL section of the Index Summary. saves data to the resource table.
         /// </summary>
         private void SQLIndexSummary(string message)
         {
-            string SQLString = "";
-            try //try loop in case command fails.
+            try                                                                             //try loop in case command fails.
             {
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
+                string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//Convert json to object
                 StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "(");
+                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "(");  //start loading the command into the string
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
-                string keySection = "";
-                string valueSection = "";
-                foreach (string key in keys)//foreach key
+                string keySection = "";                                                     //stores the key section of the SQL
+                string valueSection = "";                                                   //stores the value section of the SQL
+                foreach (string key in keys)                                                //foreach key
                 {
-                    if (key == "UOM" || key == "Good" || key == "NAED" || key == "Bad" || key == "Empty" || key == "Indexes")//except machine as it is used as the table name.
+                    if (key != "Machine")                                                   //except machine as it uses an ID.
                     {
-                        keySection += key + ", ";//Make a key
-                        valueSection += "@" + key + ", ";//and value Reference to be replaced later
+                        keySection += key + ", ";                                           //Make a key
+                        valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "Time, ";//Make a Time key
-                valueSection += "@Time, ";//and value Reference to be replaced later
-                keySection += "MachineID ";
-                valueSection += "MachineID ";
-                sqlStringBuilder.Append(keySection + ")");
+                keySection += "Time, ";                                                     //Make a Time key since it is generated server side
+                valueSection += "@Time, ";                                                  //and value Reference to be replaced later
+                keySection += "MachineID ";                                                 //Add a machineID section
+                valueSection += "MachineID ";                                               //and value ( used to select from Machine Info Table
+                sqlStringBuilder.Append(keySection + ")");                                  //cap it of
                 sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine ;");//append both to the command string
-                SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    foreach (string key in keys)//foreach key
-                    {
-                        switch (key)
-                        {
-                            case "UOM":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
-
-                            case "NAED":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
-
-                            case "Good":
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
-                                break;
-
-                            case "Bad":
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
-                                break;
-
-                            case "Empty":
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
-                                break;
-
-                            case "Indexes":
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }
-                    command.Parameters.AddWithValue("@Time", DateTime.Now);
-                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
-                    int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Comand Time!
+                    command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());//replace parameters with values
+                    command.Parameters.AddWithValue("@Good", Convert.ToInt32(receivedPacket["Good"]));
+                    command.Parameters.AddWithValue("@Bad", Convert.ToInt32(receivedPacket["Bad"]));
+                    command.Parameters.AddWithValue("@Empty", Convert.ToInt32(receivedPacket["Empty"]));
+                    command.Parameters.AddWithValue("@Indexes", Convert.ToInt32(receivedPacket["Indexes"]));
+                    command.Parameters.AddWithValue("@UOM", receivedPacket["UOM"].ToString());
+                    command.Parameters.AddWithValue("@Time", DateTime.Now);                 //add a timestamp
+                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add the machine name
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                            //catch exceptions
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    MainForm.ReastablishSQL(SQLIndexSummary, message);
+                    Controller.ReastablishSQL(SQLIndexSummary, message);                    //reastablish it
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else log the error and move on
             }
         }
 
@@ -316,18 +300,6 @@ namespace Pac_LiteService
             string DataReceived;
             try
             {
-                /*
-                <?xml version=\"1.0\" encoding=\"utf-16\"?><__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user>
-                <__name>username</__name>
-                </user><password __encrypted=\"no\">Password</password>
-                </__connect><__filter><__allowUntaggedInstances><![CDATA[3]]></__allowUntaggedInstances></__filter></__session><__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>
-                <__name><![CDATA[MfgOrder]]></__name></MfgOrder><Product>
-                <__name><![CDATA[ProductNaed]]></__name><__useROR><![CDATA[true]]></__useROR></Product>
-                <Qty><![CDATA[QTY]]></Qty><Resource>
-                <__name><![CDATA[RESOURCE]]></__name>
-                </Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><UOM><__name><![CDATA[UnitOfMesure]]>
-                </__name></UOM></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>
-                */
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
@@ -341,7 +313,7 @@ namespace Pac_LiteService
                 PacketStringBuilder.Append("</__name></UOM></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");//resource
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(), 2); }
+            catch (Exception ex) { Controller.DiagnosticOut(ex.ToString(), 2); }
         }
 
         /// <summary>
@@ -349,67 +321,47 @@ namespace Pac_LiteService
         /// </summary>
         private void SQLDownTimePacket(string message)
         {
-            string SQLString = "";
-            try //try loop in case command fails.
+            try                                                                             //try loop in case command fails.
             {
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "DownTimes (");
+                string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobject
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
+                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "DownTimes (");//start loading the SQL Command
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
-                string keySection = "";
-                string valueSection = "";
-                foreach (string key in keys)//foreach key
+                string keySection = "";                                                     //contains the key section of the sql
+                string valueSection = "";                                                   // contains the value section of the sql
+                foreach (string key in keys)                                                //foreach key
                 {
-                    if (key == "Status" || key == "NAED" || key == "MReason" || key == "UReason")//except machine as it is used as the table name.
+                    if (key != "Machine")                                                   //except machine as it is used as the table name. and is instead entered as an id
                     {
-                        keySection += key + ", ";//Make a key
-                        valueSection += "@" + key + ", ";//and value Reference to be replaced later
+                        keySection += key + ", ";                                           //Make a key
+                        valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "MachineID , Time ";
-                valueSection += "MachineID ,@Time ";
-                sqlStringBuilder.Append(keySection + ")");
+                keySection += "MachineID , Time ";                                          //add a machine ID and time key
+                valueSection += "MachineID ,@Time ";                                        //add a value section as well
+                sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine ;");//append both to the command string
-                SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    foreach (string key in keys)//foreach key
-                    {
-                        switch (key)
-                        {
-                            case "Status":
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
-                                break;
-                            case "NAED":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
-
-                            case "MReason":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
-
-                            case "UReason":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }
+                string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Command Time!
+                    command.Parameters.AddWithValue("@Status", Convert.ToInt32(receivedPacket["Status"]));//replace perameters with values
+                    command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
+                    command.Parameters.AddWithValue("@MReason", receivedPacket["MReason"].ToString());
+                    command.Parameters.AddWithValue("@UReason", receivedPacket["UReason"].ToString());
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
-                    command.Parameters.AddWithValue("@Time", DateTime.Now);
-                    int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                    command.Parameters.AddWithValue("@Time", DateTime.Now);                 //add a timestamp
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                            //catch exceptions
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    MainForm.ReastablishSQL(SQLDownTimePacket, message);
+                    Controller.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
@@ -421,14 +373,6 @@ namespace Pac_LiteService
             string DataReceived;
             try
             {
-                /*
-            <__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>
-            <__name><![CDATA[zzzCIO_1Loader]]></__name>
-            </Resource><ResourceGroup><__name><![CDATA[CIO_1ResourceGrp]]></__name></ResourceGroup><ResourceStatusCode>
-            <__name><![CDATA[Alarm]]></__name>
-            </ResourceStatusCode><ResourceStatusReason><__name><![CDATA[2]]></__name>
-            </ResourceStatusReason></__inputData><__execute /><__requestData><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData></__service></__InSite>
-*/
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
@@ -441,113 +385,112 @@ namespace Pac_LiteService
                 PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite > ");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { MainForm.DiagnosticOut(ex.ToString(), 2); }
+            catch (Exception ex) { Controller.DiagnosticOut(ex.ToString(), 2); }
         }
 
         /// <summary>
-        ///  Packet sent at each index to sql
+        ///  Packet sent at each index to sql records it to the resource table.
         /// </summary>
         private void SQLShortTimeStatisticPacket(string message)
         {
-            string SQLString = "";
-            try //try loop in case command fails.
+            try                                                                             //try loop in case command fails.
             {
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"].ToString() + "ShortTimeStatistics (");
+                string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert it to a jobject
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder to create the sql string
+                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"].ToString() + "ShortTimeStatistics (");//start building SQL string
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
-                string keySection = "[";
-                string valueSection = "";
-                foreach (string key in keys)//foreach key
+                string keySection = "";                                                     //stores the key section of the sql
+                string valueSection = "";                                                   //stores the value section of the sql
+                foreach (string key in keys)                                                //foreach key
                 {
-                    if (key != "Machine" &&key!="TimeStamp")//except machine as it is used as the table name.
+                    if (key != "Machine")                                                   //except machine as it is used as the table name. and is loaded as an id
                     {
-                        keySection += key + "], [";//Make a key
-                        valueSection += "@" + key + ", ";//and value Reference to be replaced later
+                        keySection += "[" + key + "], ";                                    //Make a key
+                        valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "MachineID], [TimeStamp] ";
-                valueSection += "MachineID, @TimeStamp ";
-                sqlStringBuilder.Append(keySection + ")");
+                keySection += "[MachineID], [TimeStamp] ";                                  //add a machineIDsection and timestamp
+                valueSection += "MachineID, @TimeStamp ";                                   //add to value section to
+                sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine;");//append both to the command string
-                SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    foreach (string key in keys)//foreach key
+                string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Comand Time!
+                    foreach (string key in keys)                                            //foreach key
                     {
-                        if (key != "Machine" )
-                            if (key != "HeadNumber")
-                            {
+                        if (key != "Machine")                                               //Except Machine
+                            if (key != "HeadNumber")                                        //and head number
+                            {                                                               // convert to bool
                                 command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
                             }
-                            else
+                            else                                                            //if it is a head number add it as an int
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                     }
-                    command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);
-                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
-                    int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                    command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);            //add a timestamp
+                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add teh machine name
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                            //catch exceptions
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    MainForm.ReastablishSQL(SQLShortTimeStatisticPacket, message);
+                    Controller.ReastablishSQL(SQLShortTimeStatisticPacket, message);        //reestablish it
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //log it
             }
         }
 
-        /// <summary>
-        ///  Packet sent at each index to MDE over UDP
-        /// </summary>
-        private void MDEShortTimeStatisticPacket(string message)
-        {
-            try
-            {
-                List<byte> bySNPoSend = new List<byte>();
-                List<bool> bits = new List<bool>();
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
-                keys.Sort();
-                foreach (string key in keys)
-                {
-                    if (key != "Machine" && key != "Theo" && key != "HeadNumber")
-                        bits.Add(Convert.ToInt32(receivedPacket[key] ?? 0) == 1); // if the key's value is null set bit to false, otherwise set it to the bit.
-                }
-                bySNPoSend.Add((byte)'~');
-                for (int Index = 0; Index < bits.Count; Index += 8)
-                {
-                    bool[] Bools;
-                    if (bits.Count - Index >= 8)
-                    {
-                        Bools = new bool[8];
-                        Array.Copy(bits.ToArray(), Index, Bools, 0, 8);
-                    }
-                    else
-                    {
-                        Bools = new bool[bits.Count - Index];
-                        Array.Copy(bits.ToArray(), Index, Bools, 0, bits.Count - Index);
-                    }
-                    bySNPoSend.Add(ConvertBoolArrayToByteLeftJustified(Bools));
-                }
-                string Theo = Convert.ToString(receivedPacket["Theo"]);
-                bySNPoSend.Add((byte)Convert.ToInt32(receivedPacket["HeadNumber"]));
-                for (int x = 0; x < Theo.Length; x++)
-                {
-                    bySNPoSend.Add((byte)Theo[x]);
-                }
-                bySNPoSend.Add((byte)10);//new line end character
-                MDEClient.Send(bySNPoSend.ToArray(), bySNPoSend.Count, MDEIP, MDEClientPort);
-            }
-            catch (Exception ex)
-            {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
-            }
-        }
+        ///// <summary>
+        /////  Packet sent at each index to MDE over UDP Deprecieted currently as MDE has been deprecieted
+        ///// </summary>
+        //private void MDEShortTimeStatisticPacket(string message)
+        //{
+        //    try
+        //    {
+        //        List<byte> bySNPoSend = new List<byte>();                                   //make a byte array for the packet to be sent
+        //        List<bool> bits = new List<bool>();                                         //make a bool array to convert to each bit in the byte array
+        //        string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
+        //        JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert to jobject
+        //        List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+        //        keys.Sort();                                                                //Make sure all keys are alphabetical for easeir documentation
+        //        foreach (string key in keys)                                                //foreach key
+        //        {
+        //            if (key != "Machine" && key != "HeadNumber")                            //that isnt HeadNumber or Machine name
+        //                bits.Add(Convert.ToInt32(receivedPacket[key] ?? 0) == 1);           //if the key's value is null set bit to false, otherwise set it to the bit.
+        //        }
+        //        bySNPoSend.Add((byte)'~');                                                  //add MDE Header byte
+        //        for (int Index = 0; Index < bits.Count; Index += 8)                         //foreach group of 8 bools in bits
+        //        {
+        //            bool[] Bools;                                                           //generate a new bool array
+        //            if (bits.Count - Index >= 8)                                            //if there are atleast 8 bools left
+        //            {
+        //                Bools = new bool[8];                                                //make the bool array length of 8
+        //                Array.Copy(bits.ToArray(), Index, Bools, 0, 8);                     //Copy the 8 bits we are on into the new bool array
+        //            }
+        //            else
+        //            {                                                                       //else if less than 8
+        //                Bools = new bool[bits.Count - Index];                               //make the bool array the size of the remaining bits
+        //                Array.Copy(bits.ToArray(), Index, Bools, 0, bits.Count - Index);    //copy remaining bits to array
+        //            }
+        //            bySNPoSend.Add(ConvertBoolArrayToByteLeftJustified(Bools));             //turn the bits into a byte Left justified (true true turns to 11000000)
+        //        }
+        //        string Theo = Convert.ToString(receivedPacket["Theo"]);                     //get theorectical from packet
+        //        bySNPoSend.Add((byte)Convert.ToInt32(receivedPacket["HeadNumber"]));        //add the head number to the bytes to send
+        //        for (int x = 0; x < Theo.Length; x++)                                       //add each character of the theoretical length to the packet
+        //        {
+        //            bySNPoSend.Add((byte)Theo[x]);                                          //add the character
+        //        }
+        //        bySNPoSend.Add((byte)10);                                                   //new line end packet character
+        //        MDEClient.Send(bySNPoSend.ToArray(), bySNPoSend.Count, MDEIP, MDEClientPort);//UnComment if your going to use it it will stop build otherwise however
+        //    }
+        //    catch (Exception ex)                                                            //catch exceptions
+        //    {
+        //        Controller.DiagnosticOut(ex.ToString(), 1);                                 //logit and move on
+        //    }
+        //}
 
         #endregion Packet Section
 
@@ -558,29 +501,27 @@ namespace Pac_LiteService
         /// </summary>
         private string Sendmessage(string host, int port, string content)
         {
-            var connection = new ServerConnection();
+            var connection = new ServerConnection();                                        //create a server connection
             try
             {
-                var connected = connection.Connect(host, port); // try connecting
-                if (!connected) return ""; // return nothing if cant connect
-                connection.Send(content); // send data
-                connection.Receive(out var result); // reviece message from server, and store into variable
-                connection.Disconnect(); // Close connection
-                string receivemessage;
+                var connected = connection.Connect(host, port);                             // try connecting on the host and port passed in
+                if (!connected) return "";                                                  // return nothing if cant connect
+                connection.Send(content);                                                   // send data
+                connection.Receive(out var result);                                         // reviece message from server, and store into variable
+                connection.Disconnect();                                                    // Close connection
                 try
                 {
-                    receivemessage = XDocument.Parse(result).ToString(); // format recieved message into xml
+                    return XDocument.Parse(result).ToString();                              // format recieved message into xml
                 }
                 catch
                 {
-                    receivemessage = result;
+                    return result;                                                          // if formatting fails just send unformatted back
                 }
-                return receivemessage;
             }
-            catch (Exception ex) // If an error occurred return null string
+            catch (Exception ex)                                                            // If an error occurred return null string
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
-                return "";
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //logit
+                return "";                                                                  //return null string
             }
         }
 
@@ -589,13 +530,11 @@ namespace Pac_LiteService
         /// </summary>
         private bool[] ConvertByteToBoolArray(byte b)
         {
-            bool[] result = new bool[8];
-            // check each bit in the byte. if 1 set to true, if 0 set to false
-            for (int i = 0; i < 8; i++)
-                result[i] = (b & (1 << i)) == 0 ? false : true;
-            // reverse the array
-            Array.Reverse(result);
-            return result;
+            bool[] result = new bool[8];                                                    //bool array to return
+            for (int i = 0; i < 8; i++)                                                     // check each bit in the byte.
+                result[i] = (b & (1 << i)) == 0 ? false : true;                             //if 1 set to true, if 0 set to false
+            Array.Reverse(result);                                                          // reverse the array
+            return result;                                                                  //return the result
         }
 
         /// <summary>
@@ -603,18 +542,15 @@ namespace Pac_LiteService
         /// </summary>
         private byte ConvertBoolArrayToByteRightJustified(bool[] source)
         {
-            byte result = 0;
-            // This assumes the array never contains more than 8 elements!
-            int index = 8 - source.Length;
-            // Loop through the array
-            foreach (bool b in source)
+            byte result = 0;                                                                //result to return
+            int index = 8 - source.Length;                                                  // This assumes the array never contains more than 8 elements!
+            foreach (bool b in source)                                                      //foreach bool in the bool array passed in
             {
-                // if the element is 'true' set the bit at that position
-                if (b)
-                    result |= (byte)(1 << (7 - index));
-                index++;
+                if (b)                                                                      // if the element is 'true'
+                    result |= (byte)(1 << (7 - index));                                     //set the bit at that position
+                index++;                                                                    //increment the position
             }
-            return result;
+            return result;                                                                  //return the result
         }
 
         /// <summary>
@@ -622,16 +558,15 @@ namespace Pac_LiteService
         /// </summary>
         private byte ConvertBoolArrayToByteLeftJustified(bool[] source)
         {
-            byte result = 0;
-            int index = 0;
-            foreach (bool b in source)
+            byte result = 0;                                                                //result to return
+            int index = 0;                                                                  //index
+            foreach (bool b in source)                                                      //foreach bool in the bools passed in
             {
-                // if the element is 'true' set the bit at that position
-                if (b)
-                    result |= (byte)(1 << (7 - index));
-                index++;
+                if (b)                                                                      // if the element is 'true'
+                    result |= (byte)(1 << (7 - index));                                     //set the bit at that position
+                index++;                                                                    //increment the position
             }
-            return result;
+            return result;                                                                  //return result
         }
 
         #endregion Connections/Resources/Misc

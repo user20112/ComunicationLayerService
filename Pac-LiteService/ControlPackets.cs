@@ -7,32 +7,32 @@ namespace Pac_LiteService
 {
     internal class ControlPackets
     {
-        private PacLiteService MainForm;
+        private PacLiteService Controller;
 
-        public ControlPackets(PacLiteService mainform)
+        public ControlPackets(PacLiteService Controller)
         {
-            MainForm = mainform;
+            Controller = Controller;
         }
 
         public void LoggingLevel(string message)
         {
             try
             {
-                var OldSetting = MainForm.LogggingLevel;
+                var OldSetting = Controller.LogggingLevel;
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                MainForm.LogggingLevel = Convert.ToInt32(receivedPacket["LoggingLevel"]);
-                MainForm.DiagnosticOut("Logging Level Has been set to" + receivedPacket["LoggingLevel"].ToString(), 2);
+                Controller.LogggingLevel = Convert.ToInt32(receivedPacket["LoggingLevel"]);
+                Controller.DiagnosticOut("Logging Level Has been set to" + receivedPacket["LoggingLevel"].ToString(), 2);
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
-                    MainForm.LogggingLevel = OldSetting;
-                    MainForm.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 2);
+                    Controller.LogggingLevel = OldSetting;
+                    Controller.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 2);
                 }
             }
             catch (Exception ex)
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);
             }
         }
 
@@ -40,24 +40,24 @@ namespace Pac_LiteService
         {
             try
             {
-                var OldSetting = MainForm.Sending;
+                var OldSetting = Controller.Sending;
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                MainForm.Sending = Convert.ToInt32(receivedPacket["Sendbool"]) == 1;
-                MainForm.DiagnosticOut("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 2);
+                Controller.Sending = Convert.ToInt32(receivedPacket["Sendbool"]) == 1;
+                Controller.DiagnosticOut("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 2);
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
-                    MainForm.Sending = OldSetting;
+                    Controller.Sending = OldSetting;
                     if (OldSetting)
-                        MainForm.DiagnosticOut("Sending Has been set to 1", 2);
+                        Controller.DiagnosticOut("Sending Has been set to 1", 2);
                     else
-                        MainForm.DiagnosticOut("Sending Has been set to 0", 2);
+                        Controller.DiagnosticOut("Sending Has been set to 0", 2);
                 }
             }
             catch (Exception ex)
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);
             }
         }
 
@@ -65,24 +65,24 @@ namespace Pac_LiteService
         {
             try
             {
-                var OldSetting = MainForm.Listening;
+                var OldSetting = Controller.Listening;
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                MainForm.Listening = Convert.ToInt32(receivedPacket["ListenBool"]) == 1;
-                MainForm.DiagnosticOut("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 2);
+                Controller.Listening = Convert.ToInt32(receivedPacket["ListenBool"]) == 1;
+                Controller.DiagnosticOut("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 2);
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
-                    MainForm.Listening = OldSetting;
+                    Controller.Listening = OldSetting;
                     if (OldSetting)
-                        MainForm.DiagnosticOut("Listening Has been set to 1", 2);
+                        Controller.DiagnosticOut("Listening Has been set to 1", 2);
                     else
-                        MainForm.DiagnosticOut("Listening Has been set to 0", 2);
+                        Controller.DiagnosticOut("Listening Has been set to 0", 2);
                 }
             }
             catch (Exception ex)
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);
             }
         }
     }
