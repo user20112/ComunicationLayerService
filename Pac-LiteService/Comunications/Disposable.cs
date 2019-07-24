@@ -2,10 +2,10 @@
 
 namespace Pac_LiteService.Comunications
 {
-    internal class Disposable
+    internal class Disposable//wraper around Idisposable that includes a name for the disposable object
     {
-        public string Name = "";
-        private IDisposable IDisposable;
+        public string Name = "";//name of the object
+        private IDisposable IDisposable;//object
 
         public Disposable(string name, IDisposable idisposable)
         {
@@ -13,7 +13,7 @@ namespace Pac_LiteService.Comunications
             IDisposable = idisposable;
         }
 
-        public void Dispose()
+        public void Dispose()//dispose of the object
         {
             IDisposable.Dispose();
         }

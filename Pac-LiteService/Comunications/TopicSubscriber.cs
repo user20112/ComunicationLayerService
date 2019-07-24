@@ -5,22 +5,22 @@ using System;
 
 namespace Pac_LiteService
 {
-    public delegate void MessageReceivedDelegate(string message);
+    public delegate void MessageReceivedDelegate(string message);                                   //CallBack Delegate for whenever we receive a message
 
     public class TopicSubscriber : IDisposable
     {
-        private readonly string topicName = null;
-        private readonly IConnectionFactory connectionFactory;
-        private readonly IConnection connection;
-        private readonly ISession session;
-        private readonly IMessageConsumer consumer;
-        private bool isDisposed = false;
+        private readonly string topicName = null;                                                   //what topic we are subscribed to
+        private readonly IConnectionFactory connectionFactory;                                      //conection factory for making the connection
+        private readonly IConnection connection;                                                    //Connection for making the session
+        private readonly ISession session;                                                          //session for making the consumer
+        private readonly IMessageConsumer consumer;                                                 //Consumer for receiveing MEssages
+        private bool isDisposed = false;                                                            //weather this has been disposed of yet
 
-        public event MessageReceivedDelegate OnMessageReceived;
+        public event MessageReceivedDelegate OnMessageReceived;                                     //callback delegate for whenever we receive a message
 
-        public TopicSubscriber(string topicName, string brokerUri, string clientId, string consumerId)
+        public TopicSubscriber(string topicName, string brokerUri, string clientId, string consumerId)//set all of the variables
         {
-            this.topicName = topicName;
+            this.topicName = topicName;                                                         
             this.connectionFactory = new ConnectionFactory(brokerUri);
             this.connection = this.connectionFactory.CreateConnection();
             this.connection.ClientId = clientId;
@@ -31,18 +31,18 @@ namespace Pac_LiteService
             this.consumer.Listener += new MessageListener(OnMessage);
         }
 
-        public void OnMessage(IMessage message)
-        {
-            ITextMessage textMessage = message as ITextMessage;
+        public void OnMessage(IMessage message)                                                     // whenever we get a message
+        {   
+            ITextMessage textMessage = message as ITextMessage;                                     //convert message into ITextMessage
             if (this.OnMessageReceived != null)
             {
-                this.OnMessageReceived(textMessage.Text);
+                this.OnMessageReceived(textMessage.Text);                                           //fire the message to the MessageDelegate
             }
         }
 
         #region IDisposable Members
 
-        public void Dispose()
+        public void Dispose()                                                                       //Dispose Everything
         {
             if (!this.isDisposed)
             {
