@@ -39,7 +39,7 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.ServiceName = "PacLiteService";
+            this.serviceInstaller1.ServiceName = "SNPService";
             // 
             // ProjectInstaller
             // 

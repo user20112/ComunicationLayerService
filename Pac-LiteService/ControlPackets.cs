@@ -7,9 +7,9 @@ namespace Pac_LiteService
 {
     internal class ControlPackets
     {
-        private PacLiteService Controller;
+        private SNPService Controller;
 
-        public ControlPackets(PacLiteService controller)
+        public ControlPackets(SNPService controller)
         {
             Controller = controller;
         }

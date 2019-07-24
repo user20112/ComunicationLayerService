@@ -17,7 +17,7 @@ namespace Pac_LiteService
     {
         #region Variable Section
 
-        private PacLiteService Controller;                                                  // Contains either the service or form that owns this class.
+        private SNPService Controller;                                                  // Contains either the service or form that owns this class.
         //public TopicPublisher Publisher;                                                    // publishes to the Pac-Light Outbound topic
 
         //public UdpClient MDEClient;                                                         // depreciated comunication to MDE over udp
@@ -33,7 +33,7 @@ namespace Pac_LiteService
         //private int MDEClientPort;                                                          // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                              // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
 
-        public SNPPackets(PacLiteService controller)
+        public SNPPackets(SNPService controller)
         {
             Controller = controller;                                                        //set the owner of this class
             CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];          // pull Camstar username

@@ -79,11 +79,11 @@
     <Compile Include="Comunications\TopicSubscriber.cs" />
     <Compile Include="ControlPackets.cs" />
     <Compile Include="EMPPackets.cs" />
-    <Compile Include="PacLiteService.cs">
+    <Compile Include="SNPService.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="PacLiteService.Designer.cs">
-      <DependentUpon>PacLiteService.cs</DependentUpon>
+    <Compile Include="SNPService.Designer.cs">
+      <DependentUpon>SNPService.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
@@ -100,8 +100,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="PacLiteService.resx">
-      <DependentUpon>PacLiteService.cs</DependentUpon>
+    <EmbeddedResource Include="SNPService.resx">
+      <DependentUpon>SNPService.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>

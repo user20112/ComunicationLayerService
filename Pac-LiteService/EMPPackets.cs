@@ -14,11 +14,11 @@ namespace Pac_LiteService
     {
         #region Variable Section
 
-        private PacLiteService Controller;
+        private SNPService Controller;
         public const string TopicName = "SNP.Outbound";
         public TopicPublisher Publisher;
 
-        public EMPPackets(PacLiteService controller)
+        public EMPPackets(SNPService controller)
         {
             Controller = controller;
         }

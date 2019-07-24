@@ -1,6 +1,6 @@
 ﻿namespace Pac_LiteService
 {
-    partial class PacLiteService
+    partial class SNPService
     {
         /// <summary> 
         /// Required designer variable.
@@ -31,7 +31,7 @@
             // 
             // Service1
             // 
-            this.ServiceName = "PacLiteService";
+            this.ServiceName = "SNPService";
 
         }
 

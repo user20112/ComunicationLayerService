@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29025.244
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pac-LiteService", "Pac-LiteService\Pac-LiteService.csproj", "{F1FE527E-ADA7-486F-8544-3234DBF3BD39}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SNPService", "Pac-LiteService\SNPService.csproj", "{F1FE527E-ADA7-486F-8544-3234DBF3BD39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

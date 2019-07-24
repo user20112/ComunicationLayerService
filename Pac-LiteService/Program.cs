@@ -14,7 +14,7 @@ namespace Pac_LiteService
         {
             ServiceBase[] servicesToRun = new ServiceBase[]
             {
-            new PacLiteService()
+            new SNPService()
             };
             if (Environment.UserInteractive)
             {

@@ -13,9 +13,9 @@ using System.Xml.Linq;
 
 namespace Pac_LiteService
 {
-    public partial class PacLiteService : ServiceBase
+    public partial class SNPService : ServiceBase
     {
-        public PacLiteService()
+        public SNPService()
         {
             InitializeComponent();
             DiagnosticOut("Hello World!", 1);                                                    //say hello to the world
