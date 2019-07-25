@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -68,30 +69,26 @@ namespace Pac_LiteService
             try                                                                             //If this fails break dont break the application
             {
                 string ErrorString = receivedPacket["Errors"].ToString();                   //Get all errors passed in
-                string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
-                foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
+                if (ErrorString.Length > 0)
                 {
-                    Errors += "[" + error + "] [bit] NULL, ";                               //set the feild type to bit and allow it to be nullable
-                }
-                Errors = Errors.Substring(0, Errors.Length - 2);                            //remove extra comma and space
+                    string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
+                    foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
+                    {
+                        Errors += "[" + error + "] [bit] NULL, ";                               //set the feild type to bit and allow it to be nullable
+                    }
+                    Errors = Errors.Substring(0, Errors.Length - 2);
+                }                        //remove extra comma and space
             }
-            catch                                                                           //if this fails set it to defualt no errors
+            catch (Exception ex)                                                                          //if this fails set it to defualt no errors
             {
                 Errors = "";
             }
             try                                                                             //try loop in case command fails.
             {
-                StringBuilder sqlStringBuilder = new StringBuilder();                       //this builder will build the SQL String
-                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");//Load the create tables with defualt table information using MachineName as the resource name
-                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,TimeStamp [date] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
-                sqlStringBuilder.Append(" ) ON [PRIMARY] ");
-                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
-                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
-                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
+                StringBuilder sqlStringBuilder = new StringBuilder();
+                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the MachineInfoEntry
                 sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
-                string SQLString = sqlStringBuilder.ToString();                             //Convert the builder to the string
+                string SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Commmand Time!
                     command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with their respective values
@@ -100,6 +97,27 @@ namespace Pac_LiteService
                     command.Parameters.AddWithValue("@Theo", Theo);
                     command.Parameters.AddWithValue("@Plant", Plant);
                     command.Parameters.AddWithValue("@Engineer", Engineer);
+                    int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                }
+                bool Missing = CheckForDatabase(Line);
+
+                sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
+                if (Missing)                                                                //if we dont have a database yet
+                {
+                    sqlStringBuilder.Append(" CREATE DATABASE [" + Line + "];");            //create one
+                }
+                sqlStringBuilder.Append(" USE [" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
+                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
+                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,TimeStamp [date] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
+                sqlStringBuilder.Append(" ) ON [PRIMARY] ");
+                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
+                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
+                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
+                sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
+                SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Commmand Time!
                     int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
@@ -129,7 +147,7 @@ namespace Pac_LiteService
             try                                                                             //try loop in case command fails.
             {
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder to build the sql
-                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");                             //load the edit command using Machine as the resource name
+                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the edit command using Machine as the resource name
                 sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();                             //convert the builder to a string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
@@ -142,7 +160,7 @@ namespace Pac_LiteService
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
                 sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
-                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");                             //load alter table command
+                sqlStringBuilder.Append(" USE [" + Line + "] ");                             //load alter table command
                 sqlStringBuilder.Append("Alter Table " + receivedPacket["Machine"] + "ShortTimeStatistics ADD ");
                 string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
                 string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
@@ -156,10 +174,6 @@ namespace Pac_LiteService
                 SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Comand Time Again!
-                    command.Parameters.AddWithValue("@machine", machineName);               //set parameters to their values
-                    command.Parameters.AddWithValue("@Line", Line);
-                    command.Parameters.AddWithValue("@SNPID", snp_ID);
-                    command.Parameters.AddWithValue("@Theo", Theo);
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
@@ -175,27 +189,36 @@ namespace Pac_LiteService
         }
 
         /// <summary>
-        /// Deletes existing machine ( deletes the Machine Info entry and all databases asociated with it
+        /// Deletes existing machine ( deletes the Machine Info entry and all tables asociated with it
         /// </summary>
         public void DeleteMachinePacket(string message)
         {
             Controller.DiagnosticOut("Delete Machine Packet!", 2);                          // log the packet as have been received
             string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
             JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert it to a Jobject
+            string Line = receivedPacket["Line"].ToString();
             string machineName = receivedPacket["Machine"].ToString();                      //get the machine name in a nice easy feild
             try                                                                             //try loop in case command fails.
             {
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder for sql command
-                sqlStringBuilder.Append(" USE ["+ConfigurationManager.AppSettings["ENGDBDatabase"]+" ] ");                             //load sql command and edit for machine name as the resource name
+                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load sql command and edit for machine name as the resource name
                 sqlStringBuilder.Append(" delete from MachineInfoTable where MachineName = @machine;");//drop the reference
-                sqlStringBuilder.Append("drop table [" + machineName + "];");
-                sqlStringBuilder.Append("drop table [" + machineName + "DownTimes];");
-                sqlStringBuilder.Append("drop table [" + machineName + "ShortTimeStatistics];");
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Comand Time!
                     command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());//replace parameters with values
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                }
+                sqlStringBuilder = new StringBuilder();                                     //clear string builder
+                sqlStringBuilder.Append(" USE [" + Line + "] ");                            //build next section
+                sqlStringBuilder.Append("drop table [" + machineName + "];");
+                sqlStringBuilder.Append("drop table [" + machineName + "DownTimes];");
+                sqlStringBuilder.Append("drop table [" + machineName + "ShortTimeStatistics];");
+                SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Comand Time!
+                    int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
@@ -249,7 +272,9 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//Convert json to object
                 StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "(");  //start loading the command into the string
+                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [" + temp[1] + "] ");                            //select database
+                sqlStringBuilder.Append("INSERT INTO [" + receivedPacket["Machine"].ToString() + "] (");  //start loading the command into the string
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";                                                     //stores the key section of the SQL
                 string valueSection = "";                                                   //stores the value section of the SQL
@@ -264,9 +289,9 @@ namespace Pac_LiteService
                 keySection += "Time, ";                                                     //Make a Time key since it is generated server side
                 valueSection += "@Time, ";                                                  //and value Reference to be replaced later
                 keySection += "MachineID ";                                                 //Add a machineID section
-                valueSection += "MachineID ";                                               //and value ( used to select from Machine Info Table
+                valueSection += temp[0] + " ";                                               //and value
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it of
-                sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine ;");//append both to the command string
+                sqlStringBuilder.Append("Values ( " + valueSection + ");");                 //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Comand Time!
@@ -326,7 +351,9 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobject
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
-                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"] + "DownTimes (");//start loading the SQL Command
+                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [" + temp[1] + "] ");                            //select database
+                sqlStringBuilder.Append("INSERT INTO [" + receivedPacket["Machine"] + "DownTimes] (");//start loading the SQL Command
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";                                                     //contains the key section of the sql
                 string valueSection = "";                                                   // contains the value section of the sql
@@ -339,9 +366,9 @@ namespace Pac_LiteService
                     }
                 }
                 keySection += "MachineID , Time ";                                          //add a machine ID and time key
-                valueSection += "MachineID ,@Time ";                                        //add a value section as well
+                valueSection += temp[0] + " ,@Time ";                                        //add a value section as well
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
-                sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine ;");//append both to the command string
+                sqlStringBuilder.Append("values (" + valueSection + ");");                  //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Command Time!
@@ -398,7 +425,9 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert it to a jobject
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder to create the sql string
-                sqlStringBuilder.Append("INSERT INTO " + receivedPacket["Machine"].ToString() + "ShortTimeStatistics (");//start building SQL string
+                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [" + temp[1] + "] ");                            //select database
+                sqlStringBuilder.Append("INSERT INTO [" + receivedPacket["Machine"].ToString() + "ShortTimeStatistics] (");//start building SQL string
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";                                                     //stores the key section of the sql
                 string valueSection = "";                                                   //stores the value section of the sql
@@ -411,9 +440,9 @@ namespace Pac_LiteService
                     }
                 }
                 keySection += "[MachineID], [TimeStamp] ";                                  //add a machineIDsection and timestamp
-                valueSection += "MachineID, @TimeStamp ";                                   //add to value section to
+                valueSection += temp[0] + ", @TimeStamp ";                                  //add to value section to
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
-                sqlStringBuilder.Append("SELECT " + valueSection + "from MachineInfoTable" + " where MachineName = @Machine;");//append both to the command string
+                sqlStringBuilder.Append("values ( " + valueSection + ");");//append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Comand Time!
@@ -551,6 +580,78 @@ namespace Pac_LiteService
                 index++;                                                                    //increment the position
             }
             return result;                                                                  //return the result
+        }
+
+        /// <summary>
+        /// From Machine name get Line and machine ID
+        /// </summary>
+        private string[] GetMachineIDAndLine(string Machine)
+        {
+            try
+            {
+                string[] result = new string[2] { "", "" };                                                                //result to return
+                StringBuilder sqlStringBuilder = new StringBuilder();
+                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + "] ");//select database
+                sqlStringBuilder.Append("select MachineID, Line from MachineInfoTable where MachineName='" + Machine + "';");  //start loading the command into the string
+                string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Comand Time!
+                    using (IDataReader dr = command.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            result[0] = dr[0].ToString();
+                            result[1] = dr[1].ToString();
+                        }
+                    }
+                }
+                return result;
+                //return the result
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("There is already an open DataReader"))
+                {
+                    Thread.Sleep(100);
+                    return GetMachineIDAndLine(Machine);
+                }
+                else
+                    Controller.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                return new string[2] { "", "" };
+            }
+        }
+
+        /// <summary>
+        /// From Machine name get Line and machine ID
+        /// </summary>
+        private bool CheckForDatabase(string Line)
+        {
+            bool result = true;
+            try
+            {
+                using (SqlCommand command = new SqlCommand("SELECT name from sys.databases where name='" + Line + "'", Controller.ENGDBConnection))
+                {
+                    using (IDataReader dr = command.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            result = false;
+                        }
+                    }
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("There is already an open DataReader"))
+                {
+                    Thread.Sleep(100);
+                    return CheckForDatabase(Line);
+                }
+                else
+                    Controller.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                return true;
+            }
         }
 
         /// <summary>

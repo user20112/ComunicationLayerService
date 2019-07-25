@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.IO;
-using System.Net.Sockets;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,7 +98,7 @@ namespace Pac_LiteService
         /// <summary>
         ///  called whenever a mqtt message from ActiveMQ is received
         /// </summary>
-        private void MainInputSubsriber_OnmessageReceived(string message)                       
+        private void MainInputSubsriber_OnmessageReceived(string message)
         {
             try
             {
@@ -177,8 +176,8 @@ namespace Pac_LiteService
                             case 1:                                                        //Logging Level Packet
                                 Task.Run(() => ControlPackets.LoggingLevel(message));
                                 break;
-                                                                                            //Silence Packet
-                            case 2:                                                         
+                            //Silence Packet
+                            case 2:
                                 Task.Run(() => ControlPackets.Silence(message));
                                 break;
 
@@ -195,7 +194,7 @@ namespace Pac_LiteService
                         break;
                 }
             }
-            catch(Exception ex)                                                             //catch exceptions
+            catch (Exception ex)                                                             //catch exceptions
             {
                 DiagnosticOut(ex.ToString(), 1);                                            //log it
             }
@@ -208,7 +207,7 @@ namespace Pac_LiteService
         {
             try
             {
-                DiagnosticOut("Connecting MainSubscriber", 2);                              
+                DiagnosticOut("Connecting MainSubscriber", 2);
                 MainInputSubsriber = new TopicSubscriber(SubTopicName, Broker, ClientID, ConsumerID); //connect the main Subscriber
                 MainInputSubsriber.OnMessageReceived += new MessageReceivedDelegate(MainInputSubsriber_OnmessageReceived);//add the deligate for when a message is received
                 ThingsToDispose.Add(new Disposable(nameof(MainInputSubsriber), MainInputSubsriber));//add to reference pile so it disposes of itself properly.
@@ -223,7 +222,7 @@ namespace Pac_LiteService
             //catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }
             try
             {
-                DiagnosticOut("Connecting EMP Publisher", 2);                           //connect the EMp Publisher                           
+                DiagnosticOut("Connecting EMP Publisher", 2);                           //connect the EMp Publisher
                 EMPPackets.Publisher = new TopicPublisher(EMPPackets.TopicName, Broker);
                 ThingsToDispose.Add(new Disposable(nameof(EMPPackets.Publisher), EMPPackets.Publisher));//add it to things to dispose
             }
@@ -335,7 +334,7 @@ namespace Pac_LiteService
         public void ReastablishSQL(FunctionThatFailed functionThatFailed, string message)
         {
             if (fixingconnection)                                                       //if we are already fixing the connection
-            {   
+            {
                 while (fixingconnection)                                                //dont touch anything and just sleep for a little bit
                 {
                     Thread.Sleep(100);
@@ -358,14 +357,14 @@ namespace Pac_LiteService
                 }
                 catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }               //log log log log logit
                 fixingconnection = false;                                               //unlock it
-            }   
+            }
             functionThatFailed(message);                                                //recall the function that failed
         }
 
         /// <summary>
         /// Connects to Camstar with the username and password provided.
         /// </summary>
-        private void CamstarConnect(string UserName, string Password)           
+        private void CamstarConnect(string UserName, string Password)
         {
             DiagnosticOut("Connecting Camstar", 2);
             string DataReceived;                                                        //stores data camstar sends back
