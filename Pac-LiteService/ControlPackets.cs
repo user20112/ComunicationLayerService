@@ -22,12 +22,12 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert Json to jobject
                 Controller.LogggingLevel = Convert.ToInt32(receivedPacket["LoggingLevel"]);                             //set logging level
-                Controller.DiagnosticOut("Logging Level Has been set to" + receivedPacket["LoggingLevel"].ToString(), 2);//Log Log Log everyone wants a log
+                Controller.DiagnosticOut("Logging Level Has been set to" + receivedPacket["LoggingLevel"].ToString(), 1);//Log Log Log everyone wants a log
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      //if intTimInSeconds is set and is not 0
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
                     Controller.LogggingLevel = OldSetting;                                                              //sleep for the time requested in seconds before setting the setting back
-                    Controller.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 2);              //LOOOOOOGGGGG
+                    Controller.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 1);              //LOOOOOOGGGGG
                 }
             }
             catch (Exception ex)                                                                                        //catch all errors
@@ -44,15 +44,15 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert to jobject
                 Controller.Sending = Convert.ToInt32(receivedPacket["Sendbool"]) == 1;                                  //Set the Sending bool
-                Controller.DiagnosticOut("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 2);         //log it
+                Controller.DiagnosticOut("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 21);         //log it
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      // if int time in seconds is set and not 0
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
                     Controller.Sending = OldSetting;                                                                    //sleep for that long in seconds before setting the setting back to its previos state
                     if (OldSetting)
-                        Controller.DiagnosticOut("Sending Has been set to 1", 2);
+                        Controller.DiagnosticOut("Sending Has been set to 1", 1);
                     else
-                        Controller.DiagnosticOut("Sending Has been set to 0", 2);
+                        Controller.DiagnosticOut("Sending Has been set to 0", 1);
                 }
             }
             catch (Exception ex)                                                                                        //catch errors
@@ -69,15 +69,15 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert to jobject
                 Controller.Listening = Convert.ToInt32(receivedPacket["ListenBool"]) == 1;                              //set setting
-                Controller.DiagnosticOut("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 2);     //logit
+                Controller.DiagnosticOut("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 1);     //logit
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      //if inttime inseconds is set and not 0
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
                     Controller.Listening = OldSetting;                                                                  //sleep for that long then set the setting back
                     if (OldSetting)
-                        Controller.DiagnosticOut("Listening Has been set to 1", 2);
+                        Controller.DiagnosticOut("Listening Has been set to 1", 1);
                     else
-                        Controller.DiagnosticOut("Listening Has been set to 0", 2);
+                        Controller.DiagnosticOut("Listening Has been set to 0", 1);
                 }
             }
             catch (Exception ex)                                                                                        //catch the errors
