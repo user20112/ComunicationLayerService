@@ -328,14 +328,74 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
-                PacketStringBuilder.Append("<?xml version=\"1.0\" encoding=\"utf-16\"?><__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user><__name>" + CamstarUsername + "</__name></user><password __encrypted=\"yes\">" + Camstar.Util.CryptUtil.Encrypt(CamstarPassword) + "</password></__connect>");
-                PacketStringBuilder.Append("<__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>");
-                PacketStringBuilder.Append("<__name><![CDATA[]]></__name></MfgOrder><Product>");
-                PacketStringBuilder.Append("< __name >< ![CDATA[" + receivedPacket["Naed"] + "]] ></ __name >< __useROR >< ![CDATA[true]] ></ __useROR ></ Product > ");//productNaed
-                PacketStringBuilder.Append("< Qty >< ![CDATA[" + receivedPacket["Good"] + "]] ></ Qty >< Resource >");
-                PacketStringBuilder.Append("< __name >< ![CDATA[" + receivedPacket["Machine"] + "]] ></ __name >");//qty
-                PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><UOM><__name><![CDATA[EA]]>");
-                PacketStringBuilder.Append("</__name></UOM></__inputData><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");//resource
+                PacketStringBuilder.Append("<?xml version=\"1.0\" encoding=\"utf - 16\"?>");
+                PacketStringBuilder.Append("<__InSite __version=\"1.1\" __encryption=\"2\">");
+                PacketStringBuilder.Append("    <__session>");
+                PacketStringBuilder.Append("        <__connect>");
+                PacketStringBuilder.Append("            <user>");
+                PacketStringBuilder.Append("                <__name><![CDATA["+ CamstarUsername + "]]></__name>");
+                PacketStringBuilder.Append("            </user>");
+                PacketStringBuilder.Append("            <password __encrypted=no>" + /*Camstar.Util.CryptUtil.Encrypt(*/CamstarPassword/*)*/ + "</password>");
+                PacketStringBuilder.Append("            <__processingDefaults>");
+                PacketStringBuilder.Append("        </__connect>");
+                PacketStringBuilder.Append("    </__session>");
+                PacketStringBuilder.Append("    <__service __serviceType=\"ResourceThruput\">");
+                PacketStringBuilder.Append("        <__utcOffset>");
+                PacketStringBuilder.Append("            <![CDATA[-04:00:00]]>");
+                PacketStringBuilder.Append("        </__utcOffset>");
+                PacketStringBuilder.Append("        <__inputData>");
+                PacketStringBuilder.Append("            <MfgOrder>");
+                PacketStringBuilder.Append("                <__name>");
+                PacketStringBuilder.Append("                    <![CDATA[]]>");
+                PacketStringBuilder.Append("                </__name>");
+                PacketStringBuilder.Append("            </MfgOrder>");
+                PacketStringBuilder.Append("            <Product>");
+                PacketStringBuilder.Append("                <__name>");
+                PacketStringBuilder.Append("                    <![CDATA[" + receivedPacket["Naed"] + "]]>");
+                PacketStringBuilder.Append("                </__name>");
+                PacketStringBuilder.Append("                <__useROR>");
+                PacketStringBuilder.Append("                    <![CDATA[true]]>");
+                PacketStringBuilder.Append("                </__useROR>");
+                PacketStringBuilder.Append("            </Product>");
+                PacketStringBuilder.Append("            <Qty>");
+                PacketStringBuilder.Append("                <![CDATA[" + receivedPacket["Good"] + "]]>");
+                PacketStringBuilder.Append("            </Qty>");
+                PacketStringBuilder.Append("            <Resource>");
+                PacketStringBuilder.Append("                <__name>");
+                PacketStringBuilder.Append("                    <![CDATA[" + receivedPacket["Machine"] + "]]>");
+                PacketStringBuilder.Append("                </__name>");
+                PacketStringBuilder.Append("            </Resource>");
+                PacketStringBuilder.Append("            <ResourceGroup>");
+                PacketStringBuilder.Append("                <__name>");
+                PacketStringBuilder.Append("                    <![CDATA[CIO_1ResourceGrp]]>");
+                PacketStringBuilder.Append("                </__name>");
+                PacketStringBuilder.Append("            </ResourceGroup>");
+                PacketStringBuilder.Append("            <UOM>");
+                PacketStringBuilder.Append("                <__name>");
+                PacketStringBuilder.Append("                    <![CDATA[EA]]>");
+                PacketStringBuilder.Append("                </__name>");
+                PacketStringBuilder.Append("            </UOM>");
+                PacketStringBuilder.Append("        </__inputData>");
+                PacketStringBuilder.Append("        <__perform>");
+                PacketStringBuilder.Append("            <__eventName>");
+                PacketStringBuilder.Append("                <![CDATA[GetWIPMsgs]]>");
+                PacketStringBuilder.Append("            </__eventName>");
+                PacketStringBuilder.Append("        </__perform>");
+                PacketStringBuilder.Append("        <__execute/>");
+                PacketStringBuilder.Append("        <__requestData>");
+                PacketStringBuilder.Append("            <CompletionMsg />");
+                PacketStringBuilder.Append("            <WIPMsgMgr>");
+                PacketStringBuilder.Append("                <WIPMsgs>");
+                PacketStringBuilder.Append("                    <AcknowledgementRequired />");
+                PacketStringBuilder.Append("                    <MsgAcknowledged />");
+                PacketStringBuilder.Append("                    <MsgText />");
+                PacketStringBuilder.Append("                    <PasswordRequired />");
+                PacketStringBuilder.Append("                    <WIPMsgDetails />");
+                PacketStringBuilder.Append("                </WIPMsgs>");
+                PacketStringBuilder.Append("            </WIPMsgMgr>");
+                PacketStringBuilder.Append("        </__requestData>");
+                PacketStringBuilder.Append("    </__service>");
+                PacketStringBuilder.Append("</__InSite>");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
             catch (Exception ex) { Controller.DiagnosticOut(ex.ToString(), 2); }
@@ -530,7 +590,9 @@ namespace Pac_LiteService
         /// </summary>
         private string Sendmessage(string host, int port, string content)
         {
-            var connection = new ServerConnection();                                        //create a server connection
+            
+            ServerConnection connection = new ServerConnection();   
+                //create a server connection
             try
             {
                 var connected = connection.Connect(host, port);                             // try connecting on the host and port passed in

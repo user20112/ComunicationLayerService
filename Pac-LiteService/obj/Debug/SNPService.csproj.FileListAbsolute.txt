@@ -19,3 +19,9 @@ C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\SNPService.csproj.CopyComplete
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.exe
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Debug\Pac-LiteService.pdb
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Camstar.Constants.dll
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Camstar.Exceptions.dll
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Camstar.Util.dll
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Camstar.Utility.dll
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\InSiteXMLClient.dll
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\SharpZipLib.dll
