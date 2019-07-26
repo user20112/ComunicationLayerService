@@ -6,36 +6,33 @@ using System.Threading;
 namespace VisualVersionofService
 {
     internal class ControlPackets
-    {        /// <summary>
-             /// Packet Sent every index for the EMP system. Simply insert into SQL for recording ( and grab a time stamp if missing)
-             /// </summary>
-        private Form1 MainForm;
+    {
+        private Form1 Controller;
 
-        public ControlPackets(Form1 mainform)
+        public ControlPackets(Form1 controller)
         {
-            MainForm = mainform;
+            Controller = controller;
         }
 
         public void LoggingLevel(string message)
         {
             try
             {
-                var OldSetting = MainForm.LogggingLevel;
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                MainForm.LogggingLevel = Convert.ToInt32(receivedPacket["LoggingLevel"]);
-                MainForm.DiagnosticOut("Logging Level Has been set to" + receivedPacket["LoggingLevel"].ToString(), 2);
-                if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)
+                var OldSetting = Controller.LogggingLevel;                                                              //grab previos setting
+                string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert Json to jobject
+                Controller.LogggingLevel = Convert.ToInt32(receivedPacket["LoggingLevel"]);                             //set logging level
+                Controller.DiagnosticOut("Logging Level Has been set to" + receivedPacket["LoggingLevel"].ToString(), 1);//Log Log Log everyone wants a log
+                if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      //if intTimInSeconds is set and is not 0
                 {
-                    Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
-                    MainForm.LogggingLevel = OldSetting;
-                    MainForm.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 2);
+                    Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
+                    Controller.LogggingLevel = OldSetting;                                                              //sleep for the time requested in seconds before setting the setting back
+                    Controller.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 1);              //LOOOOOOGGGGG
                 }
-
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                                                        //catch all errors
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                                             //and definitly dont log them that would be terrible why would you do such a thing i mean cmon we worked so hard on this application and we logged every other error in it so why would we log this one ? we wouldnt it just doesnt make sense so cmon get your head out of the gutter man
             }
         }
 
@@ -43,24 +40,24 @@ namespace VisualVersionofService
         {
             try
             {
-                var OldSetting = MainForm.Sending;
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                MainForm.Sending = Convert.ToInt32(receivedPacket["Sendbool"]) == 1;
-                MainForm.DiagnosticOut("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 2);
-                if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)
+                var OldSetting = Controller.Sending;                                                                    //grab old setting
+                string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert to jobject
+                Controller.Sending = Convert.ToInt32(receivedPacket["Sendbool"]) == 1;                                  //Set the Sending bool
+                Controller.DiagnosticOut("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 21);         //log it
+                if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      // if int time in seconds is set and not 0
                 {
-                    Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
-                    MainForm.Sending = OldSetting;
+                    Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
+                    Controller.Sending = OldSetting;                                                                    //sleep for that long in seconds before setting the setting back to its previos state
                     if (OldSetting)
-                        MainForm.DiagnosticOut("Sending Has been set to 1", 2);
+                        Controller.DiagnosticOut("Sending Has been set to 1", 1);
                     else
-                        MainForm.DiagnosticOut("Sending Has been set to 0", 2);
+                        Controller.DiagnosticOut("Sending Has been set to 0", 1);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                                                        //catch errors
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                                             //log them
             }
         }
 
@@ -68,24 +65,24 @@ namespace VisualVersionofService
         {
             try
             {
-                var OldSetting = MainForm.Listening;
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                MainForm.Listening = Convert.ToInt32(receivedPacket["ListenBool"]) == 1;
-                MainForm.DiagnosticOut("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 2);
-                if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)
+                var OldSetting = Controller.Listening;                                                                  //grab old setting
+                string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert to jobject
+                Controller.Listening = Convert.ToInt32(receivedPacket["ListenBool"]) == 1;                              //set setting
+                Controller.DiagnosticOut("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 1);     //logit
+                if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      //if inttime inseconds is set and not 0
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
-                    MainForm.Listening = OldSetting;
+                    Controller.Listening = OldSetting;                                                                  //sleep for that long then set the setting back
                     if (OldSetting)
-                        MainForm.DiagnosticOut("Listening Has been set to 1", 2);
+                        Controller.DiagnosticOut("Listening Has been set to 1", 1);
                     else
-                        MainForm.DiagnosticOut("Listening Has been set to 0", 2);
+                        Controller.DiagnosticOut("Listening Has been set to 0", 1);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                                                        //catch the errors
             {
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                                             //let it log it
             }
         }
     }

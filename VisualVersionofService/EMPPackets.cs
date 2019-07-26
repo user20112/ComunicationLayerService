@@ -14,13 +14,13 @@ namespace VisualVersionofService
     {
         #region Variable Section
 
-        private Form1 MainForm;
+        private Form1 Controller;
         public const string TopicName = "SNP.Outbound";
         public TopicPublisher Publisher;
 
-        public EMPPackets(Form1 mainform)
+        public EMPPackets(Form1 controller)
         {
-            MainForm = mainform;
+            Controller = controller;
         }
 
         #endregion Variable Section
@@ -28,67 +28,76 @@ namespace VisualVersionofService
         #region Packet Section
 
         /// <summary>
+        /// Packet Sent When there are extremes in either temperature humidity or flowrate/presure
+        /// </summary>
+        public void WarningPacket(string message)
+        {
+            Controller.DiagnosticOut("EMPWarningPacketReceived!", 3);                    //log it
+            Task.Run(() => SQLEMPWarningPacket(message));                               //run it
+            Task.Run(() => MQTTEMPWarningPacket(message));                              //send it
+        }
+
+        /// <summary>
         /// Packet Sent every index for the EMP system. Simply insert into SQL for recording ( and grab a time stamp if missing)
         /// </summary>
         public void IndexPacket(string message)
         {
-            MainForm.DiagnosticOut("EMPIndexPacketReceived!", 2);
-            string SQLString = "";
-            try //try loop in case command fails.
+            Controller.DiagnosticOut("EMPIndexPacketReceived!", 2);                             //log the packet being received in Diagnostic.
+            try                                                                                 //try loop in case command fails.
             {
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append("INSERT INTO EMPTable (");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
-                string keySection = "";
-                string valueSection = "";
-                bool MissingStamp = true;
-                foreach (string key in keys)//foreach key
+                string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //Convert json to jobject
+                StringBuilder sqlStringBuilder = new StringBuilder();                           //string builder used to build sql string
+                sqlStringBuilder.Append("INSERT INTO EMPTable (");                              //start building sql
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();   //gets list of all keys in json object
+                string keySection = "";                                                         //stores the key section of the sql
+                string valueSection = "";                                                       //stores the value section of the sql
+                bool MissingStamp = true;                                                       //used to tell weather or not a timestamp was passed in
+                foreach (string key in keys)                                                    //foreach key
                 {
-                    keySection += key + ", ";//Make a key
-                    valueSection += "@" + key + ", ";//and value Reference to be replaced later
-                    if (key == "TimeStamp")
+                    keySection += key + ", ";                                                   //Make a key
+                    valueSection += "@" + key + ", ";                                           //and value Reference to be replaced later
+                    if (key == "TimeStamp")                                                     // if we receive a time stamp key we are receiving a timestamp
                     {
                         MissingStamp = false;
                     }
                 }
-                if (MissingStamp)
+                if (MissingStamp)                                                               //if we didnt receive a timestamp
                 {
-                    keySection += "TimeStamp";//Make a Time key
-                    valueSection += "@TimeStamp";//and value Reference to be replaced later
+                    keySection += "TimeStamp";                                                  //Make a Time key
+                    valueSection += "@TimeStamp";                                               //and value Reference to be replaced later
                 }
                 else
                 {
-                    valueSection = valueSection.Substring(0, valueSection.Length - 2);
-                    keySection = keySection.Substring(0, keySection.Length - 2);
+                    valueSection = valueSection.Substring(0, valueSection.Length - 2);          //if we have extra data at the end remove it
+                    keySection = keySection.Substring(0, keySection.Length - 2);                //from the key section to
                 }
-                sqlStringBuilder.Append(keySection + " )");
-                sqlStringBuilder.Append("Values ( " + valueSection + " );");//append both to the command string
-                SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    foreach (string key in keys)//foreach key
+                sqlStringBuilder.Append(keySection + " )");                                     //cap of the key section
+                sqlStringBuilder.Append("Values ( " + valueSection + " );");                    //append value section to the command string
+                string SQLString = sqlStringBuilder.ToString();                                 //convert vuilder to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                               //Comand Time!
+                    foreach (string key in keys)                                                //foreach key
                     {
                         switch (key)
                         {
-                            case "Temperature":
+                            case "Temperature":                                                 //if we have the Temperature convert to decimal and update
                                 command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key]));
                                 break;
 
-                            case "Humidity":
+                            case "Humidity":                                                 //if we have the Humidity convert to decimal and update
                                 command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key].ToString()));
                                 break;
 
-                            case "FlowRate":
+                            case "FlowRate":                                                 //if we have the FlowRate convert to decimal and update
                                 command.Parameters.AddWithValue("@" + key, Convert.ToDecimal((receivedPacket[key])));
                                 break;
 
-                            case "ChangeOver5Seconds":
+                            case "ChangeOver5Seconds":                                       //if we have the ChangeOver5Seconds convert to decimal and update
                                 command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key]));
                                 break;
 
-                            case "TimeStamp":
+                            case "TimeStamp":                                                 //if we have the TimeStamp convert to datetime and update
                                 if (MissingStamp)
                                     command.Parameters.AddWithValue("@" + key, DateTime.Now);
                                 else
@@ -104,7 +113,7 @@ namespace VisualVersionofService
                                 }
                                 break;
 
-                            case "Location":
+                            case "Location":                                                 //if we have the Location update it
                                 command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
                                 break;
 
@@ -112,28 +121,18 @@ namespace VisualVersionofService
                                 break;
                         }
                     }
-                    int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                            //catch exceptions
             {
-                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection broke
                 {
-                    MainForm.ReastablishSQL(IndexPacket, message);
+                    Controller.ReastablishSQL(IndexPacket, message);                        //reastablish it
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //so if you could log this that would be greaaaaaaat
             }
-        }
-
-        /// <summary>
-        /// Packet Sent When there are extremes in either temperature humidity or flowrate/presure
-        /// </summary>
-        public void WarningPacket(string message)
-        {
-            MainForm.DiagnosticOut("EMPWarningPacketReceived!", 3);
-            Task.Run(() => SQLEMPWarningPacket(message));
-            Task.Run(() => MQTTEMPWarningPacket(message));
         }
 
         /// <summary>
@@ -144,39 +143,39 @@ namespace VisualVersionofService
             string SQLString = "";
             try //try loop in case command fails.
             {
-                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
-                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
-                StringBuilder sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append("INSERT INTO EMPWarningTable (");
-                IList<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
-                string keySection = "";
-                string valueSection = "";
-                bool MissingStamp = true;
-                foreach (string key in keys)//foreach key
+                string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert to jobject
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //make sql string builder
+                sqlStringBuilder.Append("INSERT INTO EMPWarningTable (");                   //start making sql string
+                List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
+                string keySection = "";                                                     //stores the key section of the sql
+                string valueSection = "";                                                   //stores the value section of the sql
+                bool MissingStamp = true;                                                   //records weather we got a time stamp or not
+                foreach (string key in keys)                                                //foreach key
                 {
-                    keySection += key + ", ";//Make a key
-                    valueSection += "@" + key + ", ";//and value Reference to be replaced later
-                    if (key == "TimeStamp")
+                    keySection += key + ", ";                                               //Make a key
+                    valueSection += "@" + key + ", ";                                       //and value Reference to be replaced later
+                    if (key == "TimeStamp")                                                 //if we get a TimeStamp record it
                     {
                         MissingStamp = false;
                     }
                 }
-                if (MissingStamp)
+                if (MissingStamp)                                                           //If we dont
                 {
-                    keySection += "TimeStamp";//Make a Time key
-                    valueSection += "@TimeStamp";//and value Reference to be replaced later
+                    keySection += "TimeStamp";                                              //Make a Time key
+                    valueSection += "@TimeStamp";                                           //and value Reference to be replaced later
                 }
                 else
                 {
-                    valueSection = valueSection.Substring(0, valueSection.Length - 2);
-                    keySection = keySection.Substring(0, keySection.Length - 2);
+                    valueSection = valueSection.Substring(0, valueSection.Length - 2);      //Next Remove Extra characters
+                    keySection = keySection.Substring(0, keySection.Length - 2);            //Next Remove Extra characters
                 }
-                sqlStringBuilder.Append(keySection + " )");
-                sqlStringBuilder.Append("Values ( " + valueSection + " );");//append both to the command string
-                SQLString = sqlStringBuilder.ToString();//convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, MainForm.ENGDBConnection))
-                {
-                    foreach (string key in keys)//foreach key
+                sqlStringBuilder.Append(keySection + " )");                                 //and append/capoff the strings
+                sqlStringBuilder.Append("Values ( " + valueSection + " );");
+                SQLString = sqlStringBuilder.ToString();                                    //convert to string
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {                                                                           //Command  Time Woo!
+                    foreach (string key in keys)                                            //foreach key
                     {
                         switch (key)
                         {
@@ -213,16 +212,16 @@ namespace VisualVersionofService
                         }
                     }
                     int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    MainForm.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                 }
             }
             catch (Exception ex)
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
                 {
-                    MainForm.ReastablishSQL(WarningPacket, message);
+                    Controller.ReastablishSQL(SQLEMPWarningPacket, message);
                 }
-                MainForm.DiagnosticOut(ex.ToString(), 1);
+                Controller.DiagnosticOut(ex.ToString(), 1);
             }
         }
 
