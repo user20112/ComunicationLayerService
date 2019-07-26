@@ -76,7 +76,7 @@ namespace Pac_LiteService
                         string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
                         foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                         {
-                            Errors += "[" + error + "] [bit] NULL, ";                               //set the feild type to bit and allow it to be nullable
+                            Errors += "[" + error + "] [bit] NOT NULL DEFAULT 0, ";                               //set the feild type to bit and allow it to be nullable
                         }
                         Errors = Errors.Substring(0, Errors.Length - 2);
                     }                        //remove extra comma and space
@@ -174,7 +174,7 @@ namespace Pac_LiteService
                 string Errors = "";                                                         //this string is added to the sql
                 foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                 {
-                    Errors += ("[" + error + "] [bit] NULL, ");                             //column is a bit feild that is nullable
+                    Errors += ("[" + error + "] [bit] NOT NULL DEFAULT 0, ");                             //column is a bit feild that is nullable
                 }
                 Errors = Errors.Substring(0, Errors.Length - 2);                            //remove extra space and comma
                 sqlStringBuilder.Append(Errors + ";");                                      //append a semicolon
