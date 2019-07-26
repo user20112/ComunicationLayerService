@@ -56,35 +56,35 @@ namespace Pac_LiteService
         /// </summary>
         public void NewMachinePacket(string message)
         {
-            Controller.DiagnosticOut("New Machine Packet!", 2);                             // log the packet as have been received
-            string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
-            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert the json to an object
-            string machineName = receivedPacket["Machine"].ToString();                      //get the important sections of the packet out ( that arent errors)
-            string Line = receivedPacket["Line"].ToString();
-            string Theo = receivedPacket["Theo"].ToString();
-            int snp_ID = Convert.ToInt32((byte)message[2]);                                 //get the SNP ID from the message header
-            string Plant = receivedPacket["Plant"].ToString();
-            string Engineer = receivedPacket["Engineer"].ToString();
-            string Errors = "";                                                             //Start Errors as blank
-            try                                                                             //If this fails break dont break the application
-            {
-                string ErrorString = receivedPacket["Errors"].ToString();                   //Get all errors passed in
-                if (ErrorString.Length > 0)
-                {
-                    string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
-                    foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
-                    {
-                        Errors += "[" + error + "] [bit] NULL, ";                               //set the feild type to bit and allow it to be nullable
-                    }
-                    Errors = Errors.Substring(0, Errors.Length - 2);
-                }                        //remove extra comma and space
-            }
-            catch (Exception ex)                                                                          //if this fails set it to defualt no errors
-            {
-                Errors = "";
-            }
             try                                                                             //try loop in case command fails.
             {
+                Controller.DiagnosticOut("New Machine Packet!", 2);                             // log the packet as have been received
+                string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert the json to an object
+                string machineName = receivedPacket["Machine"].ToString();                      //get the important sections of the packet out ( that arent errors)
+                string Line = receivedPacket["Line"].ToString();
+                string Theo = receivedPacket["Theo"].ToString();
+                int snp_ID = Convert.ToInt32((byte)message[2]);                                 //get the SNP ID from the message header
+                string Plant = receivedPacket["Plant"].ToString();
+                string Engineer = receivedPacket["Engineer"].ToString();
+                string Errors = "";                                                             //Start Errors as blank
+                try                                                                             //If this fails break dont break the application
+                {
+                    string ErrorString = receivedPacket["Errors"].ToString();                   //Get all errors passed in
+                    if (ErrorString.Length > 0)
+                    {
+                        string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
+                        foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
+                        {
+                            Errors += "[" + error + "] [bit] NULL, ";                               //set the feild type to bit and allow it to be nullable
+                        }
+                        Errors = Errors.Substring(0, Errors.Length - 2);
+                    }                        //remove extra comma and space
+                }
+                catch (Exception ex)                                                                          //if this fails set it to defualt no errors
+                {
+                    Errors = "";
+                }
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the MachineInfoEntry
                 sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
@@ -106,15 +106,22 @@ namespace Pac_LiteService
                 if (Missing)                                                                //if we dont have a database yet
                 {
                     sqlStringBuilder.Append(" CREATE DATABASE [" + Line + "];");            //create one
+                    SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
+                    using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                    {                                                                           //Commmand Time!
+                        int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                    }
                 }
+                sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,TimeStamp [date] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
+                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
                 sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
-                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Time] [datetime] NULL) ON [PRIMARY] ");
+                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Time] [datetime] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
+                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
                 SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Commmand Time!
@@ -286,8 +293,8 @@ namespace Pac_LiteService
                         valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "Time, ";                                                     //Make a Time key since it is generated server side
-                valueSection += "@Time, ";                                                  //and value Reference to be replaced later
+                keySection += "Timestamp, ";                                                     //Make a Time key since it is generated server side
+                valueSection += "@Timestamp, ";                                                  //and value Reference to be replaced later
                 keySection += "MachineID ";                                                 //Add a machineID section
                 valueSection += temp[0] + " ";                                               //and value
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it of
@@ -301,7 +308,7 @@ namespace Pac_LiteService
                     command.Parameters.AddWithValue("@Empty", Convert.ToInt32(receivedPacket["Empty"]));
                     command.Parameters.AddWithValue("@Indexes", Convert.ToInt32(receivedPacket["Indexes"]));
                     command.Parameters.AddWithValue("@UOM", receivedPacket["UOM"].ToString());
-                    command.Parameters.AddWithValue("@Time", DateTime.Now);                 //add a timestamp
+                    command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add the machine name
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
@@ -338,14 +345,14 @@ namespace Pac_LiteService
                 PacketStringBuilder.Append("</__name>");
                 PacketStringBuilder.Append("</MfgOrder><Product>");
                 PacketStringBuilder.Append("<__name>");
-                PacketStringBuilder.Append("<![CDATA["+receivedPacket["NAED"]+"]]>");
+                PacketStringBuilder.Append("<![CDATA[" + receivedPacket["NAED"] + "]]>");
                 PacketStringBuilder.Append("</__name>");
                 PacketStringBuilder.Append("<__useROR><![CDATA[true]]></__useROR>");
                 PacketStringBuilder.Append("</Product><Qty>");
-                PacketStringBuilder.Append("<![CDATA[" + receivedPacket["Good"]+"]]>");
+                PacketStringBuilder.Append("<![CDATA[" + receivedPacket["Good"] + "]]>");
                 PacketStringBuilder.Append("</Qty><Resource>");
                 PacketStringBuilder.Append("<__name>");
-                PacketStringBuilder.Append("<![CDATA["+receivedPacket["Machine"]+"]]>");
+                PacketStringBuilder.Append("<![CDATA[" + receivedPacket["Machine"] + "]]>");
                 PacketStringBuilder.Append("</__name>");
                 PacketStringBuilder.Append("</Resource><ResourceGroup>");
                 PacketStringBuilder.Append("<__name>");
@@ -386,8 +393,8 @@ namespace Pac_LiteService
                         valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "MachineID , Time ";                                          //add a machine ID and time key
-                valueSection += temp[0] + " ,@Time ";                                        //add a value section as well
+                keySection += "MachineID , Timestamp ";                                          //add a machine ID and time key
+                valueSection += temp[0] + " ,@Timestamp ";                                        //add a value section as well
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values (" + valueSection + ");");                  //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
@@ -398,7 +405,7 @@ namespace Pac_LiteService
                     command.Parameters.AddWithValue("@MReason", receivedPacket["MReason"].ToString());
                     command.Parameters.AddWithValue("@UReason", receivedPacket["UReason"].ToString());
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
-                    command.Parameters.AddWithValue("@Time", DateTime.Now);                 //add a timestamp
+                    command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
@@ -431,7 +438,7 @@ namespace Pac_LiteService
                 PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
                 PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
                 PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><ResourceStatusCode>");
-                switch(Convert.ToInt32(receivedPacket["Status"]))
+                switch (Convert.ToInt32(receivedPacket["Status"]))
                 {
                     case 0:
                         PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if down send down
@@ -474,8 +481,8 @@ namespace Pac_LiteService
                         valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "[MachineID], [TimeStamp] ";                                  //add a machineIDsection and timestamp
-                valueSection += temp[0] + ", @TimeStamp ";                                  //add to value section to
+                keySection += "[MachineID], [Timestamp] ";                                  //add a machineIDsection and timestamp
+                valueSection += temp[0] + ", @Timestamp ";                                  //add to value section to
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values ( " + valueSection + ");");//append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
@@ -491,7 +498,7 @@ namespace Pac_LiteService
                             else                                                            //if it is a head number add it as an int
                                 command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
                     }
-                    command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);            //add a timestamp
+                    command.Parameters.AddWithValue("@Timestamp", DateTime.Now);            //add a timestamp
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add teh machine name
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
@@ -565,9 +572,9 @@ namespace Pac_LiteService
         /// </summary>
         private string Sendmessage(string host, int port, string content)
         {
-            
-            ServerConnection connection = new ServerConnection();   
-                //create a server connection
+
+            ServerConnection connection = new ServerConnection();
+            //create a server connection
             try
             {
                 var connected = connection.Connect(host, port);                             // try connecting on the host and port passed in
@@ -676,7 +683,7 @@ namespace Pac_LiteService
                         }
                     }
                 }
-                return false;
+                return result;
             }
             catch (Exception ex)
             {
