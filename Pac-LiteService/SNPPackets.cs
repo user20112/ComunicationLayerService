@@ -424,13 +424,27 @@ namespace Pac_LiteService
                 string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
-                PacketStringBuilder.Append("<?xml version=\"1.0\" encoding=\"utf-16\"?><__InSite __version=\"1.1\" __encryption=\"2\"><__session><__connect><user><__name>" + CamstarUsername + "</__name></user><password __encrypted=\"yes\">" + Camstar.Util.CryptUtil.Encrypt(CamstarPassword) + "</password></__connect></__session>");
-                PacketStringBuilder.Append("<__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
+                PacketStringBuilder.Append("<__InSite __encryption=\"2\" __version=\"1.1\"><__session><__connect><user>");
+                PacketStringBuilder.Append("<__name>d.paddock</__name>");
+                PacketStringBuilder.Append("</user>");
+                PacketStringBuilder.Append("<password __encrypted=\"yes\">d81b896ee9a9697df6334a1df6f7e8286c9866e0eb243f3c4ca9b80fc0e38dd3d8c0ccef78401ff7</password>");
+                PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
                 PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
-                PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[CIO_1ResourceGrp]]></__name></ResourceGroup><ResourceStatusCode>");
-                PacketStringBuilder.Append("<__name><![CDATA[Alarm]]></__name>");//Reason
-                PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[2]]></__name>");//resource status code
-                PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite > ");
+                PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><ResourceStatusCode>");
+                switch(Convert.ToInt32(receivedPacket["Status"]))
+                {
+                    case 0:
+                        PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if down send down
+                        break;
+                    case 1:
+                        PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if scheduled down  send scheduled down ( need to talk to wade to get message for it)
+                        break;
+                    case 2:
+                        PacketStringBuilder.Append("<__name><![CDATA[Available]]></__name>");//if running send running
+                        break;
+                }
+                PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[]]></__name>");
+                PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
             catch (Exception ex) { Controller.DiagnosticOut(ex.ToString(), 2); }
