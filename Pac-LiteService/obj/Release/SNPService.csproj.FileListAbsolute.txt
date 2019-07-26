@@ -24,3 +24,4 @@ C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\SNPService.csproj.CopyComplete
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\SNPService.exe
 C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\SNPService.pdb
+C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\obj\Release\SNPService.csprojAssemblyReference.cache

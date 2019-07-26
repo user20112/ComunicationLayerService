@@ -80,7 +80,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Comunications\Camstar.cs" />
     <Compile Include="Comunications\Disposable.cs" />
     <Compile Include="Comunications\TopicPublisher.cs" />
     <Compile Include="Comunications\TopicSubscriber.cs" />
