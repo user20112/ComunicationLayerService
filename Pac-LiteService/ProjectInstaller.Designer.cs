@@ -1,4 +1,4 @@
-﻿namespace Pac_LiteService
+﻿namespace SNPService
 {
     partial class ProjectInstaller
     {

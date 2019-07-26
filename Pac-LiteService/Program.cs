@@ -3,7 +3,7 @@ using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
 
-namespace Pac_LiteService
+namespace SNPService
 {
     internal static class Program
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Pac_LiteService.Comunications
+namespace SNPService.Comunications
 {
     class Camstar
     {

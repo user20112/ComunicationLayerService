@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Pac_LiteService.Comunications
+namespace SNPService.Comunications
 {
     internal class Disposable//wraper around Idisposable that includes a name for the disposable object
     {

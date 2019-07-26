@@ -1,0 +1,77 @@
+﻿Installing assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Installing service SNPService...
+Service SNPService has been successfully installed.
+Creating EventLog source SNPService in log Application...
+Committing assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Installing assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Installing service SNPService...
+Creating EventLog source SNPService in log Application...
+Rolling back assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Restoring event log to previous state for source SNPService.
+Installing assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Installing service SNPService...
+Creating EventLog source SNPService in log Application...
+Rolling back assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Restoring event log to previous state for source SNPService.
+Uninstalling assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Removing EventLog source SNPService.
+Service SNPService is being removed from the system...
+Service SNPService was successfully removed from the system.
+Installing assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Installing service SNPService...
+Service SNPService has been successfully installed.
+Creating EventLog source SNPService in log Application...
+Committing assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Uninstalling assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Removing EventLog source SNPService.
+An exception occurred during the uninstallation of the System.Diagnostics.EventLogInstaller installer.
+System.Security.SecurityException: Requested registry access is not allowed.
+An exception occurred while uninstalling. This exception will be ignored and the uninstall will continue. However, the application might not be fully uninstalled after the uninstall is complete.
+Uninstalling assembly 'C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.InstallLog
+   assemblypath = C:\Users\d.paddock\Desktop\SNPFolder\SNP\SNPService.exe
+Removing EventLog source SNPService.
+Service SNPService is being removed from the system...
+Service SNPService was successfully removed from the system.

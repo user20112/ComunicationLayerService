@@ -1,5 +1,5 @@
 ﻿using Camstar.Utility;
-using Pac_LiteService.Comunications;
+using SNPService.Comunications;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Pac_LiteService
+namespace SNPService
 {
     public partial class SNPService : ServiceBase
     {

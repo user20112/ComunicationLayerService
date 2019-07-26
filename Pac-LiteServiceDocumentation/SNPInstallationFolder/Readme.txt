@@ -1,0 +1,2 @@
+To install run SNPInstaller.exe as administrator ( this is important) then click install. if it says transaction completed successfully it should be installed !
+To update the service copy the updated files to SNP subdirectory.

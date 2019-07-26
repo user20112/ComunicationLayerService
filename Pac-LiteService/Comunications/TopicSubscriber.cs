@@ -3,7 +3,7 @@ using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using System;
 
-namespace Pac_LiteService
+namespace SNPService
 {
     public delegate void MessageReceivedDelegate(string message);                                   //CallBack Delegate for whenever we receive a message
 

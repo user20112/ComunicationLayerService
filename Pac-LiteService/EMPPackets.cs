@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Pac_LiteService
+namespace SNPService
 {
     internal class EMPPackets
     {

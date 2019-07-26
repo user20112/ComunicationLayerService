@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Pac_LiteService
+namespace SNPService
 {
     internal class SNPPackets
     {

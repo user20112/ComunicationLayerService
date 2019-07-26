@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Threading;
 
-namespace Pac_LiteService
+namespace SNPService
 {
     internal class ControlPackets
     {

@@ -127,3 +127,23 @@ Affected parameters are:
    logtoconsole = 
    logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
    assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Uninstalling assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Removing EventLog source SNPService.
+An exception occurred during the uninstallation of the System.Diagnostics.EventLogInstaller installer.
+System.Security.SecurityException: The source was not found, but some or all event logs could not be searched.  Inaccessible logs: Security.
+An exception occurred while uninstalling. This exception will be ignored and the uninstall will continue. However, the application might not be fully uninstalled after the uninstall is complete.
+Uninstalling assembly 'C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.InstallLog
+   assemblypath = C:\Users\d.paddock\Documents\GitHub\ComunicationLayerService\Pac-LiteService\bin\Debug\Pac-LiteService.exe
+Removing EventLog source SNPService.
+Warning: The source SNPService is not registered on the local machine.
+Service SNPService is being removed from the system...
+An exception occurred during the uninstallation of the System.ServiceProcess.ServiceInstaller installer.
+System.ComponentModel.Win32Exception: The specified service does not exist as an installed service
+An exception occurred while uninstalling. This exception will be ignored and the uninstall will continue. However, the application might not be fully uninstalled after the uninstall is complete.
