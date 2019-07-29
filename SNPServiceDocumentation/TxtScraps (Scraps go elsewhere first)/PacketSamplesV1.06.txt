@@ -1,0 +1,41 @@
+Packet Structure
+length Packet Header Packet Type Pac-Lite_ID Reserverdx5 {json values} null
+all sample packets assume Device ID of 1 and a packet header of 1 for pacLite, 2 for EMP,3 for control packets. 
+Reserved bits should always be set to 32 ( a space) packet is structured in a way that Packet Header on can be done as a string.
+// Structures "Time":"yy-mm-dd-hh:mm:ss" "MachineName":"Plant-Line-Machine"
+
+Pac-Lite Messages
+IndexSummary Packet//packet type 1
+     {"Machine": "HIL-TestLine-TestMachine", "Good":"42" , "Bad":"2", "Empty":"4", "Indexes":"48", "UOM":"EA", "NAED":"31474"}
+
+Downtime Packet//packet type 2 0 down 1 pm 2 running
+     {"Machine": "HIL-TestLine-TestMachine", "Status":"1" , "MReason":"Preventing Wrenching", "UReason":"oiling up wrench launcher", "NAED":"Wrench.NAED"}
+
+ShortTimeStatistic Packet //packet type 3 packet sent out each index.
+     {"Machine": "HIL-TestLine-TestMachine", "Good":"0", "Bad":"1","Empty":"0","Attempt":"1","Other":"1","HeadNumber":"1"}
+
+DeleteMachine Packet //packet type 4 deletes the databases and entries associated with the machine name.
+ü     {"Machine": "HIL-TestLine-TestMachine", "Line":"StraightBase"}
+
+EditMachine Packet //packet type 5 Edits the Machine Info entry for the machine based off machine name
+ý     {"Machine": "HIL-TestLine-TestMachine","Theo":"4800", "Line":"StraightBase","Errors": "Error21,Error22"}
+
+NewMachine Packet //packet type 6 creates the machine databases and entries into MachineInfo
+þ     {"Machine": "HIL-TestLine-TestMachine","Plant": "Hillsboro","Engineer": "Devlin Paddock","Theo":"4800", "Line":"StraightBase","Errors": "Error1,Error2,Error3,Error4,Error5,Error6,Error7,Error8,Error9,Error10,Error11,Error12,Error13,Error14,Error15,Error16,Error17,Error18,Error20,Error19"}
+
+EMP Messages
+Index Packet //packet type 1 Records the temperature humidity flow etc of a location at a specific time.
+     {"Temperature": 87.5, "Location":"StraightBaseCabinet" , "ChangeOver5Seconds":"2.12", "Humidity":"76.6",  "FlowRate":"2112.2", "TimeStamp":"19-11-11-08:31:26"}
+
+Warning Packet //packet type 2 records a warning coming from the EMP system. ( such as but not limited to extremely high temperatures/low temperatures / dangerous humidity level /no flow).
+      {"Warning": "Help Im on fire, and the flow rate is really low i wonder if the cooling system broke.", "Location":"StraightBaseCabinet" , "Urgency":8, "TimeStamp":"19-11-11-08:31:26"}
+
+Control Messages
+LoggingLevel Packet//packet type 1
+     {"LoggingLevel": 5, "IntTimeInSeconds":"5"}
+
+Silence Packet//packet type 2 0down 1 pm 2 running
+     {"SendBool ": 0, "IntTimeInSeconds":"20"}
+
+Deafen Packet //packet type 3 packet sent out each index.
+     {"ListenBool ": 0, "IntTimeInSeconds":"5"}
