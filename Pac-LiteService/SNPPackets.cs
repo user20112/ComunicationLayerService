@@ -122,7 +122,7 @@ namespace SNPService
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                 sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar(30)] NULL) ON [PRIMARY]; ");
+                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar(30)] NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
                 SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Commmand Time!
@@ -416,6 +416,7 @@ namespace SNPService
 
                     }
                     command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
+                    command.Parameters.AddWithValue("@Code", Convert.ToInt32(receivedPacket["Code"]));
                     command.Parameters.AddWithValue("@MReason", receivedPacket["MReason"].ToString());
                     command.Parameters.AddWithValue("@UReason", receivedPacket["UReason"].ToString());
                     command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
@@ -458,7 +459,7 @@ namespace SNPService
                         PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if down send down
                         break;
                     case 1:
-                        PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if scheduled down  send scheduled down ( need to talk to wade to get message for it)
+                        PacketStringBuilder.Append("<__name><![CDATA[Alarm]]></__name>");//if scheduled down  send scheduled down ( need to talk to wade to get message for it)
                         break;
                     case 2:
                         PacketStringBuilder.Append("<__name><![CDATA[Available]]></__name>");//if running send running
