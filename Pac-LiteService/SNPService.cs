@@ -78,7 +78,7 @@ namespace SNPService
         private SNPPackets SNPPackets;                                                          //collection of all snp packets and functions
         private ControlPackets ControlPackets;                                                  //collection of all Control packets and function
 
-        private string SubTopicName = "SNP.Inbound";                                            //Topic the Main Subscriber is subbed to
+        private string SubTopicName;                                            //Topic the Main Subscriber is subbed to
         private string Broker;                                                                  //IP of the broker we are connecting to
         private string ClientID;                                                                //Client ID for the SNP Service
         private string ConsumerID;                                                              //Consumer ID for the SNP service

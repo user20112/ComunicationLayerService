@@ -1,0 +1,66 @@
+<__InSite __encryption="2" __version="1.1">
+	<__session>
+		<__connect>
+			<user>
+				<__name>d.paddock</__name>
+			</user>
+			<password __encrypted="yes">d81b896ee9a9697df6334a1df6f7e8286c9866e0eb243f3c4ca9b80fc0e38dd3d8c0ccef78401ff7</password>
+		</__connect>
+	</__session>
+	<__service __serviceType="ResourceThruput">
+		<__utcOffset>
+			<![CDATA[-04:00:00]]>
+		</__utcOffset>
+		<__inputData>
+			<MfgOrder>
+				<__name>
+					<![CDATA[]]>
+				</__name>
+			</MfgOrder>
+			<Product>
+				<__name>
+					<![CDATA[ProductNAED]]>
+				</__name>
+				<__useROR>
+					<![CDATA[true]]>
+				</__useROR>
+			</Product>
+			<Qty>
+				<![CDATA[QTY]]>
+			</Qty>
+			<Resource>
+				<__name>
+					<![CDATA[resource]]>
+				</__name>
+			</Resource>
+			<ResourceGroup>
+				<__name>
+					<![CDATA[]]>
+				</__name>
+			</ResourceGroup>
+			<UOM>
+				<__name>
+					<![CDATA[EA]]>
+				</__name>
+			</UOM>
+		</__inputData>
+		<__perform>
+			<__eventName>
+				<![CDATA[GetWIPMsgs]]>
+			</__eventName>
+		</__perform>
+		<__execute/>
+		<__requestData>
+			<CompletionMsg />
+			<WIPMsgMgr>
+				<WIPMsgs>
+					<AcknowledgementRequired />
+					<MsgAcknowledged />
+					<MsgText />
+					<PasswordRequired />
+					<WIPMsgDetails />
+				</WIPMsgs>
+			</WIPMsgMgr>
+		</__requestData>
+	</__service>
+</__InSite>

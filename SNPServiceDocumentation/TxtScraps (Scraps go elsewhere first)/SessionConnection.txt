@@ -1,0 +1,10 @@
+<__InSite __encryption=\"2\" __version=\"1.1\">
+	<__session>
+		<__connect>
+			<user>
+				<__name>UserName</__name>
+			</user>
+			<password __encrypted="yes"> Password </password>
+		</__connect>
+	</__session>
+</__InSite>

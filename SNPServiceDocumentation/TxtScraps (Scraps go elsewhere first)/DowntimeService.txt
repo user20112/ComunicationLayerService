@@ -1,0 +1,40 @@
+	
+<__service __serviceType="ResourceSetupTransition">
+	<__utcOffset>
+		<![CDATA[-04:00:00]]>
+	</__utcOffset>
+	<__inputData>
+		<Availability>
+			<![CDATA[1]]>
+		</Availability>
+		<Resource>
+			<__name>
+				<![CDATA[Resource]]>
+			</__name>
+		</Resource>
+		<ResourceGroup>
+			<__name>
+				<![CDATA[]]>
+			</__name>
+		</ResourceGroup>
+		<ResourceStatusCode>
+			<__name>
+				<![CDATA[Unscheduled]]>
+			</__name> //if down send down
+						  
+			
+		</ResourceStatusCode>
+		<ResourceStatusReason>
+			<__name>
+				<![CDATA[]]>
+			</__name>
+		</ResourceStatusReason>
+	</__inputData >
+	<__execute />
+	<__requestData >
+		<CompletionMsg />
+		<ACEMessage />
+		<ACEStatus />
+	</__requestData >
+</__service >
+                

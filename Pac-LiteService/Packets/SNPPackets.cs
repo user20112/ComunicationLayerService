@@ -122,7 +122,7 @@ namespace SNPService
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                 sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar(30)] NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
+                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar](30) NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
                 SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Commmand Time!
@@ -145,18 +145,20 @@ namespace SNPService
         /// </summary>
         public void EditMachinePacket(string message)
         {
-            Controller.DiagnosticOut("Edit Machine Packet!", 2);                            // log the packet as have been received
-            string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
-            JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //Convert it into a jobject
-            string machineName = receivedPacket["Machine"].ToString();                      //gather important sections into variables
-            string Line = receivedPacket["Line"].ToString();
-            string Theo = receivedPacket["Theo"].ToString();
-            int snp_ID = Convert.ToInt32((byte)message[2]);                                 //get snp id from message header
             try                                                                             //try loop in case command fails.
             {
+                Controller.DiagnosticOut("Edit Machine Packet!", 2);                            // log the packet as have been received
+                string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //Convert it into a jobject
+                string machineName = receivedPacket["Machine"].ToString();                      //gather important sections into variables
+                string Line = receivedPacket["Line"].ToString();
+                string Theo = receivedPacket["Theo"].ToString();
+                string Engineer = receivedPacket["Engineer"].ToString();
+                int snp_ID = Convert.ToInt32((byte)message[2]);                                 //get snp id from message header
+
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder to build the sql
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the edit command using Machine as the resource name
-                sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo where MachineName = @machine;");
+                sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo, Engineer = @Engineer  where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();                             //convert the builder to a string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //command time!
@@ -164,12 +166,13 @@ namespace SNPService
                     command.Parameters.AddWithValue("@Line", Line);
                     command.Parameters.AddWithValue("@SNPID", snp_ID);
                     command.Parameters.AddWithValue("@Theo", Theo);
+                    command.Parameters.AddWithValue("@Engineer", Engineer);
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
                 sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
                 sqlStringBuilder.Append(" USE [" + Line + "] ");                             //load alter table command
-                sqlStringBuilder.Append("Alter Table " + receivedPacket["Machine"] + "ShortTimeStatistics ADD ");
+                sqlStringBuilder.Append("Alter Table [" + receivedPacket["Machine"] + "ShortTimeStatistics] ADD ");
                 string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
                 string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
                 string Errors = "";                                                         //this string is added to the sql
