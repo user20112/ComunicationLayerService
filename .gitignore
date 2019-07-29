@@ -1,5 +1,10 @@
-VisualVersionofService/bin/
-VisualVersionofService/obj/
 .vs/SNPService/v16/Server/sqlite3/db.lock
 .vs/SNPService/v16/Server/sqlite3/storage.ide-wal
-Pac-LiteService/SNPPackets.cs
+bin/
+*.suo
+*.user
+_ReSharper.*
+bin
+obj
+packages
+.vs
