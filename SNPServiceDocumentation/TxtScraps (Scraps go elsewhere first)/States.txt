@@ -1,0 +1,3 @@
+Alarm=> UnscheduledDowntime
+Unscheduled=>UnscheduledDowntime
+Available=>ProductiveTime

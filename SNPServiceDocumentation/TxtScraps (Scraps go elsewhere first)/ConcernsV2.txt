@@ -1,0 +1,7 @@
+Concerns
+Using thread.sleep in the control packets could lead to exhuasting the threadpool. Dont spam control packets and stack them (shouldnt really be an issue which is why its using thread .sleep not some complicated logic only an issue if you do multiple lets say logging set levels at the same time and use the revert to previos setting choice.)
+JSON Size can be max of 246 characters in the plc.
+Maximum number of errors high at the same time currently is 5 ( its limited due to what i set Pairs to in the short time statistics and json encoder)
+service seems to be able to process 1000 packets per minute on my laptop ( tested with short time statistics randomized through the packet generation program and sent with MQTT Bulk sender)
+Currently the Resource Manager does not check for if your inputs are Good quality.
+Currently the SNP server does not comunicate out wether packets were successfull or not. for a udp type setup or one incapable of hearing back like the plc this is not a problem however it may become a problem for higher level applications.
