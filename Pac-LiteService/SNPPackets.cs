@@ -83,6 +83,7 @@ namespace SNPService
                 }
                 catch (Exception ex)                                                                          //if this fails set it to defualt no errors
                 {
+                    Controller.DiagnosticOut(ex.ToString(), 1);
                     Errors = "";
                 }
                 StringBuilder sqlStringBuilder = new StringBuilder();
