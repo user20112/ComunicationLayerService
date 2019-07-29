@@ -121,7 +121,7 @@ namespace SNPService
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                 sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
                 sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[Status] [int] NULL) ON [PRIMARY]; ");
+                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar(30)] NULL) ON [PRIMARY]; ");
                 SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Commmand Time!
@@ -400,7 +400,20 @@ namespace SNPService
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Command Time!
-                    command.Parameters.AddWithValue("@Status", Convert.ToInt32(receivedPacket["Status"]));//replace perameters with values
+                    switch (Convert.ToInt32(receivedPacket["Status"]))
+                    {
+                        case 0:
+                            command.Parameters.AddWithValue("@Status", "Unscheduled");//replace perameters with values
+                            break;
+                        case 1:
+                            command.Parameters.AddWithValue("@Status", "PM");//replace perameters with values
+                            break;
+                        case 2:
+                            command.Parameters.AddWithValue("@Status", "Running");//replace perameters with values
+                            break;
+
+
+                    }
                     command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
                     command.Parameters.AddWithValue("@MReason", receivedPacket["MReason"].ToString());
                     command.Parameters.AddWithValue("@UReason", receivedPacket["UReason"].ToString());
