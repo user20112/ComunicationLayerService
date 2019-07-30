@@ -27,7 +27,7 @@ namespace SNPService
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
                     Controller.LogggingLevel = OldSetting;                                                              //sleep for the time requested in seconds before setting the setting back
-                    Controller.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 1);              //LOOOOOOGGGGG
+                    Controller.DiagnosticOut("Logging Level Has been set to " + OldSetting.ToString(), 1);              //loggit
                 }
             }
             catch (Exception ex)                                                                                        //catch all errors

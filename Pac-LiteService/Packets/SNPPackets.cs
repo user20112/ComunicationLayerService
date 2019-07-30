@@ -1,6 +1,7 @@
 ﻿using Camstar.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SNPService.Comunications.QRQC;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -18,6 +19,7 @@ namespace SNPService
     {
         #region Variable Section
 
+        public Repo QRQCRepo;
         private SNPService Controller;                                                  // Contains either the service or form that owns this class.
         //public TopicPublisher Publisher;                                                    // publishes to the Pac-Light Outbound topic
 
@@ -259,7 +261,7 @@ namespace SNPService
         public void DowntimePacket(string message)
         {
             Controller.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
-            Task.Run(() => SQLDownTimePacket(message));                                     //Save data to SQL, return value doesnt matter
+            Task.Run(() => SQLDownTimePacket(message)); //Save data to SQL, return value doesnt matter
             Task.Run(() => CamstarDowntimePacket(message));                                 //send data to Camstar, return value doesnt matter
         }
 
@@ -404,18 +406,22 @@ namespace SNPService
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
                 using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
                 {                                                                           //Command Time!
-                    switch (Convert.ToInt32(receivedPacket["Status"]))
+                    switch (Convert.ToInt32(receivedPacket["StatusCode"]))
                     {
                         case 0:
-                            command.Parameters.AddWithValue("@Status", "Unscheduled");//replace perameters with values
+                            command.Parameters.AddWithValue("@StatusCode", "Unscheduled");//replace perameters with values
                             break;
 
                         case 1:
-                            command.Parameters.AddWithValue("@Status", "PM");//replace perameters with values
+                            command.Parameters.AddWithValue("@StatusCode", "Scheduled Down");//replace perameters with values
                             break;
 
                         case 2:
-                            command.Parameters.AddWithValue("@Status", "Running");//replace perameters with values
+                            command.Parameters.AddWithValue("@StatusCode", "Running");//replace perameters with values
+                            break;
+
+                        case 3:
+                            command.Parameters.AddWithValue("@StatusCode", "P/M");//replace perameters with values
                             break;
                     }
                     command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
@@ -427,6 +433,62 @@ namespace SNPService
                     int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                     Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
+                QRQCDownTimePacket(message);
+            }
+            catch (Exception ex)                                                            //catch exceptions
+            {
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
+                {
+                    Controller.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
+                }
+                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+            }
+        }
+
+        private void QRQCDownTimePacket(string message)
+        {
+            DateTime HolderTime = DateTime.Now;
+            try                                                                             //try loop in case command fails.
+            {
+                string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobjectif (Convert.ToInt32(receivedPacket["Status"]))
+                QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()));
+                StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
+                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
+                sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
+                string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
+                string ResourceId = QRQCRepo.GerResourceID(receivedPacket["Machine"].ToString());
+                string ProductID = QRQCRepo.GetProductId(receivedPacket["NAED"].ToString());
+                int Thru = QRQCRepo.GetOutTheo(receivedPacket["NAED"].ToString());
+                int Goal = QRQCRepo.GetOutGoal(receivedPacket["NAED"].ToString());
+                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                {
+                    HolderTime = DateTime.Now;                                                  //Command Time!
+                    command.Parameters.AddWithValue("@StatusBegin", HolderTime);                //add a timestamp
+                    command.Parameters.AddWithValue("@ResourceID", ResourceId);                 //add rest of values
+                    switch (Convert.ToInt32(receivedPacket["StatusCode"]))                      //convert status id to QRQC Status ID
+                    {
+                        case 1://scheduled
+                            command.Parameters.AddWithValue("@StatusID", 2);
+                            break;
+
+                        case 2://Running
+                            command.Parameters.AddWithValue("@StatusID", 0);
+                            break;
+
+                        case 3://PM
+                            command.Parameters.AddWithValue("@StatusID", 1);
+                            break;
+                    }
+                    command.Parameters.AddWithValue("@ProductID", ProductID);            
+                    command.Parameters.AddWithValue("@Thru", Thru);                 
+                    command.Parameters.AddWithValue("@Goal", Goal);                 
+                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                }
+                new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line));
+                Controller.DiagnosticOut("Changed QRQC Status", 2);
             }
             catch (Exception ex)                                                            //catch exceptions
             {
@@ -456,7 +518,7 @@ namespace SNPService
                 PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
                 PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
                 PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><ResourceStatusCode>");
-                switch (Convert.ToInt32(receivedPacket["Status"]))
+                switch (Convert.ToInt32(receivedPacket["StatusCode"]))
                 {
                     case 0:
                         PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if down send down
@@ -735,6 +797,53 @@ namespace SNPService
                 index++;                                                                    //increment the position
             }
             return result;                                                                  //return result
+        }
+
+        public Line LoadResources(string machine) //returns true if at least one loaded
+        {
+            try
+            {
+                string dbTable = "[QRQC].[dbo].[QRQC_Config_view]";
+                string query = "SELECT * FROM " + dbTable + " Where ResourceName ='" + machine + "';";
+                SqlCommand command = new SqlCommand(query, Controller.ENGDBConnection);
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Line l = new Line();
+                        l.DisplayName = reader.GetString(0);
+                        l.Automatic = reader.GetBoolean(1);
+                        l.GoodProductPerEntry = reader.GetInt16(2);
+                        l.GoodProductSQLVar = reader.GetString(3);
+                        l.TableName = reader.GetString(4);
+                        l.CStart = reader.GetInt32(5);
+                        l.CEnd = reader.GetInt32(6);
+                        l.AStart = reader.GetInt32(7);
+                        l.AEnd = reader.GetInt32(8);
+                        l.BStart = reader.GetInt32(9);
+                        l.BEnd = reader.GetInt32(10);
+                        l.Name = reader.GetString(11);
+                        l.ProductInputSQLVar = reader.GetString(12);
+                        l.isFinalMachine = reader.GetBoolean(13);
+                        l.FUDGE = reader.GetDouble(14);
+                        return l;
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
+                {
+                    Controller.ReastablishSQL(DoNothing, machine);        //reestablish it
+                    return LoadResources(machine);
+                }
+                return null;
+            }
+        }
+
+        public void DoNothing(string Message)
+        {
         }
 
         #endregion Connections/Resources/Misc
