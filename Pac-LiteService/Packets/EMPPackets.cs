@@ -26,6 +26,7 @@ namespace SNPService
         #endregion Variable Section
 
         #region Packet Section
+
         /// <summary>
         /// Packet Sent When there are extremes in either temperature humidity or flowrate/presure
         /// </summary>
@@ -35,6 +36,7 @@ namespace SNPService
             Task.Run(() => SQLEMPWarningPacket(message));                               //run it
             Task.Run(() => MQTTEMPWarningPacket(message));                              //send it
         }
+
         /// <summary>
         /// Packet Sent every index for the EMP system. Simply insert into SQL for recording ( and grab a time stamp if missing)
         /// </summary>
@@ -60,7 +62,7 @@ namespace SNPService
                         MissingStamp = false;
                     }
                 }
-                if (MissingStamp)                                                               //if we didnt receive a timestamp 
+                if (MissingStamp)                                                               //if we didnt receive a timestamp
                 {
                     keySection += "TimeStamp";                                                  //Make a Time key
                     valueSection += "@TimeStamp";                                               //and value Reference to be replaced later
@@ -69,7 +71,7 @@ namespace SNPService
                 {
                     valueSection = valueSection.Substring(0, valueSection.Length - 2);          //if we have extra data at the end remove it
                     keySection = keySection.Substring(0, keySection.Length - 2);                //from the key section to
-                }   
+                }
                 sqlStringBuilder.Append(keySection + " )");                                     //cap of the key section
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");                    //append value section to the command string
                 string SQLString = sqlStringBuilder.ToString();                                 //convert vuilder to string

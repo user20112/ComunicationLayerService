@@ -409,14 +409,14 @@ namespace SNPService
                         case 0:
                             command.Parameters.AddWithValue("@Status", "Unscheduled");//replace perameters with values
                             break;
+
                         case 1:
                             command.Parameters.AddWithValue("@Status", "PM");//replace perameters with values
                             break;
+
                         case 2:
                             command.Parameters.AddWithValue("@Status", "Running");//replace perameters with values
                             break;
-
-
                     }
                     command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
                     command.Parameters.AddWithValue("@Code", Convert.ToInt32(receivedPacket["Code"]));
@@ -461,11 +461,17 @@ namespace SNPService
                     case 0:
                         PacketStringBuilder.Append("<__name><![CDATA[Unscheduled]]></__name>");//if down send down
                         break;
+
                     case 1:
-                        PacketStringBuilder.Append("<__name><![CDATA[Alarm]]></__name>");//if scheduled down  send scheduled down ( need to talk to wade to get message for it)
+                        PacketStringBuilder.Append("<__name><![CDATA[Scheduled]></__name>");//Scheduled downtime
                         break;
+
                     case 2:
                         PacketStringBuilder.Append("<__name><![CDATA[Available]]></__name>");//if running send running
+                        break;
+
+                    case 3:
+                        PacketStringBuilder.Append("<__name><![CDATA[P/M]]></__name>");//Preventive Maintenence
                         break;
                 }
                 PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[]]></__name>");
@@ -590,7 +596,6 @@ namespace SNPService
         /// </summary>
         private string Sendmessage(string host, int port, string content)
         {
-
             ServerConnection connection = new ServerConnection();
             //create a server connection
             try

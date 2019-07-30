@@ -20,7 +20,7 @@ namespace SNPService
 
         public TopicSubscriber(string topicName, string brokerUri, string clientId, string consumerId)//set all of the variables
         {
-            this.topicName = topicName;                                                         
+            this.topicName = topicName;
             this.connectionFactory = new ConnectionFactory(brokerUri);
             this.connection = this.connectionFactory.CreateConnection();
             this.connection.ClientId = clientId;
@@ -32,7 +32,7 @@ namespace SNPService
         }
 
         public void OnMessage(IMessage message)                                                     // whenever we get a message
-        {   
+        {
             ITextMessage textMessage = message as ITextMessage;                                     //convert message into ITextMessage
             if (this.OnMessageReceived != null)
             {
