@@ -122,7 +122,7 @@ namespace SNPService
                     sqlStringBuilder = new StringBuilder();
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
+                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [Head_number] [int] NOT NULL," + Errors);
                     sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                     sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
@@ -607,7 +607,7 @@ namespace SNPService
                         foreach (string key in keys)                                            //foreach key
                         {
                             if (key != "Machine")                                               //Except Machine
-                                if (key != "HeadNumber")                                        //and head number
+                                if (key != "Head_number")                                        //and head number
                                 {                                                               // convert to bool
                                     command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
                                 }
@@ -646,7 +646,7 @@ namespace SNPService
         //        keys.Sort();                                                                //Make sure all keys are alphabetical for easeir documentation
         //        foreach (string key in keys)                                                //foreach key
         //        {
-        //            if (key != "Machine" && key != "HeadNumber")                            //that isnt HeadNumber or Machine name
+        //            if (key != "Machine" && key != "Head_number")                            //that isnt HeadNumber or Machine name
         //                bits.Add(Convert.ToInt32(receivedPacket[key] ?? 0) == 1);           //if the key's value is null set bit to false, otherwise set it to the bit.
         //        }
         //        bySNPoSend.Add((byte)'~');                                                  //add MDE Header byte
@@ -666,7 +666,7 @@ namespace SNPService
         //            bySNPoSend.Add(ConvertBoolArrayToByteLeftJustified(Bools));             //turn the bits into a byte Left justified (true true turns to 11000000)
         //        }
         //        string Theo = Convert.ToString(receivedPacket["Theo"]);                     //get theorectical from packet
-        //        bySNPoSend.Add((byte)Convert.ToInt32(receivedPacket["HeadNumber"]));        //add the head number to the bytes to send
+        //        bySNPoSend.Add((byte)Convert.ToInt32(receivedPacket["Head_number"]));        //add the head number to the bytes to send
         //        for (int x = 0; x < Theo.Length; x++)                                       //add each character of the theoretical length to the packet
         //        {
         //            bySNPoSend.Add((byte)Theo[x]);                                          //add the character
