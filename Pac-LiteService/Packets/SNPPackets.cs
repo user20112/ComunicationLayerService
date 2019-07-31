@@ -73,7 +73,7 @@ namespace SNPService
                         string[] ErrorArray = ErrorString.Split(',');                               // break up csv errors
                         foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                         {
-                            Errors += "[" + error + "] [bit] NOT NULL DEFAULT 0, ";                               //set the feild type to bit and allow it to be nullable
+                            Errors += "[" + error + "] [bit] NOT NULL DEFAULT 0, ";             //set the feild type to bit and allow it to be nullable
                         }
                         Errors = Errors.Substring(0, Errors.Length - 2);
                     }                        //remove extra comma and space
@@ -103,9 +103,9 @@ namespace SNPService
                     }
                     bool Missing = CheckForDatabase(Line);
 
-                    sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
                     if (Missing)                                                                //if we dont have a database yet
                     {
+                        sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
                         sqlStringBuilder.Append(" CREATE DATABASE [EngDb-" + Line + "];");            //create one
                         SQLString = sqlStringBuilder.ToString();                                //Convert the builder to the string
                         using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -113,6 +113,54 @@ namespace SNPService
                             int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
                             SNPService.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
                         }
+                        sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
+                        sqlStringBuilder.Append("use [EngDb-" + Line + "];");
+                        sqlStringBuilder.Append("CREATE TABLE [dbo].[Descriptions](");
+                        sqlStringBuilder.Append("	[columnIdPK] [int] IDENTITY(1,1) NOT NULL,");
+                        sqlStringBuilder.Append("	[Table] [nvarchar](128) NULL,");
+                        sqlStringBuilder.Append("	[ColumnId] [nvarchar](128) NULL,");
+                        sqlStringBuilder.Append("	[Description] [nvarchar](512) NULL,");
+                        sqlStringBuilder.Append("PRIMARY KEY CLUSTERED ");
+                        sqlStringBuilder.Append("(");
+                        sqlStringBuilder.Append("	[columnIdPK] ASC");
+                        sqlStringBuilder.Append(")WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]");
+                        sqlStringBuilder.Append(") ON [PRIMARY]");
+                        SQLString = sqlStringBuilder.ToString();                                //Convert the builder to the string
+                        using (SqlCommand command = new SqlCommand(SQLString, connection))
+                        {                                                                           //Commmand Time!
+                            int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                            SNPService.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                        }
+                    }
+                    string STSDB = machineName + "ShortTimeStatistics";
+                    string DB = machineName;
+                    string DTDB = machineName + "DownTimes";
+                    List<string> Columns = new List<string>(new string[8] { "MachineID", "Timestamp", "Good", "Bad", "Empty", "Attempt", "Input", "Head_number" });
+                    List<string> Descriptions = new List<string>(new string[8] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Time stamp of a given transaction", "wether the part was good", "wether the part was bad", "weather the head was empty", "wether we attempted to make a part", "Weather we received and input and attempted to make a product", "which head it was on" });
+                    List<string> Table = new List<string>(new string[8] { STSDB, STSDB, STSDB, STSDB, STSDB, STSDB, STSDB, STSDB });
+                    foreach (string error in receivedPacket["Errors"].ToString().Split(','))
+                    {
+                        Columns.Add(error);
+                        Descriptions.Add(error);
+                        Table.Add(STSDB);
+                    }
+                    Columns.AddRange(new string[15] { "MachineID", "Timestamp", "Good", "Bad", "Empty","Indexes","NAED","UOM","Timestamp","MReason","UReason","NAED","MachineID","StatusCode","Code" });
+                    Descriptions.AddRange(new string[15] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Time stamp of a given transaction", "Number of good parts produced", "Number of bad parts produced", "Number of times the head was empty during an index", "Number of indexes passed", "Product we are curren tly producing", "Unit of Mesure for the product we are producing",  "Time stamp of a given transaction", "Machine reason for a downtime", "User defined reason for a downtime", "The product we are currently producing","Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Code for which status the machine is in (2 running 1 scheduled downtime 0 unschedled downtime 3 PM", "Code for why the machine went down for camstar" });
+                    Table.AddRange(new string[15] { DB, DB, DB, DB, DB, DB, DB, DB, DTDB, DTDB, DTDB, DTDB, DTDB, DTDB, DTDB });
+                    int x = 0;
+                    sqlStringBuilder = new StringBuilder();
+                    sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");
+                    foreach (string Column in Columns)
+                    {
+                        sqlStringBuilder.Append(" Insert into Descriptions ( [Table] , [ColumnId] , [Description]) ");
+                        sqlStringBuilder.Append("values('" + Table[x] + "','" + Column + "','" + Descriptions[x] + "' ); ");
+                        x++;
+                    }
+                    SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Commmand Time!
+                        int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                     sqlStringBuilder = new StringBuilder();
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
@@ -161,6 +209,7 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the edit command using Machine as the resource name
                 sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo, Engineer = @Engineer  where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();                             //convert the builder to a string
+                string[] ErrorArray;
                 using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
@@ -178,7 +227,7 @@ namespace SNPService
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                             //load alter table command
                     sqlStringBuilder.Append("Alter Table [" + receivedPacket["Machine"] + "ShortTimeStatistics] ADD ");
                     string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
-                    string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
+                     ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
                     string Errors = "";                                                         //this string is added to the sql
                     foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                     {
@@ -190,6 +239,21 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Comand Time Again!
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
+
+                    string STSDB = machineName + "ShortTimeStatistics";
+                    sqlStringBuilder = new StringBuilder();
+                    sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");
+                    foreach (string error in ErrorArray)
+                    {
+                        sqlStringBuilder.Append(" Insert into Descriptions ( [Table] , [ColumnId] , [Description]) ");
+                        sqlStringBuilder.Append("values('" + STSDB + "','" + error + "','" + error + "' ); ");
+                    }
+                    SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Commmand Time!
+                        int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
                         SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
@@ -1031,9 +1095,9 @@ namespace SNPService
                                     }
                                 }
                             }
-                            }
                         }
                     }
+                }
                 catch (Exception ex)
                 {
                     SNPService.DiagnosticOut(ex.ToString(), 1);
