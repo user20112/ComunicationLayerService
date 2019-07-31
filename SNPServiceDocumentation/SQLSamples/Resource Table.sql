@@ -1,14 +1,14 @@
-USE [Pac-LiteDb ]
+USE [EngDb-XS]
 GO
 
-/****** Object:  Table [dbo].[Hil-GS-AutoFocous4]    Script Date: 7/25/2019 10:09:53 AM ******/
+/****** Object:  Table [dbo].[HIL-XS-AutoFocous]    Script Date: 7/31/2019 2:19:46 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[Hil-GS-AutoFocous4](
+CREATE TABLE [dbo].[HIL-XS-AutoFocous](
 	[EntryID] [int] IDENTITY(1,1) NOT NULL,
 	[MachineID] [int] NULL,
 	[Good] [int] NULL,
@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[Hil-GS-AutoFocous4](
 	[Indexes] [int] NULL,
 	[NAED] [varchar](20) NULL,
 	[UOM] [varchar](10) NULL,
-	[Time] [datetime] NULL
+	[Timestamp] [datetime2](7) NULL
 ) ON [PRIMARY]
 GO
 
