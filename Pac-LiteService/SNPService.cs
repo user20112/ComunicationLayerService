@@ -57,6 +57,16 @@ namespace SNPService
             }
             catch (Exception ex)                                                                //catch any errors and cry becouse we cant log them.
             {
+                try//try a simplified log
+                {
+                    using (StreamWriter DiagnosticWriter = File.AppendText(ConfigurationManager.AppSettings["DiagnosticFile"]))// @"C:\Users\d.paddock\Desktop\Diagnostic.csv")) defualt
+                    {
+                        DiagnosticWriter.WriteLine(ex.ToString());                          //output it to file
+                    }
+                }
+                catch (Exception Ex)//sadly giveup
+                {
+                }
             }
         }
 
@@ -73,7 +83,7 @@ namespace SNPService
         private delegate void SetTextCallback(string text);                                     //delegate for the function that is to be called when a message is received from the topic subscriber
 
         private TopicSubscriber MainInputSubsriber;                                             //Main subscriber subs to SNP.Inbound
-        public SqlConnection ENGDBConnection;                                                   //Connection to the ENGDB default db is SNPDb.
+        public SqlConnectionStringBuilder ENGDBConnection;                                                   //Connection to the ENGDB default db is SNPDb.
         private EMPPackets EMPPackets;                                                          //collection of all EMP Packets and functions
         private SNPPackets SNPPackets;                                                          //collection of all snp packets and functions
         private ControlPackets ControlPackets;                                                  //collection of all Control packets and function
@@ -238,14 +248,11 @@ namespace SNPService
             {
                 // Build connection string
                 DiagnosticOut("Connecting SQL Database", 2);
-                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();  //create a string builder to connect to the database
-                builder.DataSource = ENG_DBDataSource;                                  //give it the IP
-                builder.UserID = ENG_DBUserID;                                          //and the username
-                builder.Password = ENG_DBPassword;                                      //password
-                builder.InitialCatalog = ENG_DBInitialCatalog;                          //and finally the starting database
-                ENGDBConnection = new SqlConnection(builder.ConnectionString);          //turn the string into a connection
-                ENGDBConnection.Open();                                                 //open the connection
-                ThingsToDispose.Add(new Disposable(nameof(ENGDBConnection), ENGDBConnection));//add it to things that need to be disposed
+                ENGDBConnection = new SqlConnectionStringBuilder();  //create a string builder to connect to the database
+                ENGDBConnection.DataSource = ENG_DBDataSource;                                  //give it the IP
+                ENGDBConnection.UserID = ENG_DBUserID;                                          //and the username
+                ENGDBConnection.Password = ENG_DBPassword;                                      //password
+                ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;                          //and finally the starting database
             }
             catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                       //logit
         }
@@ -346,14 +353,11 @@ namespace SNPService
                 try
                 {
                     DiagnosticOut("Connecting SQL Database", 2);                        //logggggggggiittttttttt
-                    SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();//builder to connect to the database
-                    builder.DataSource = ENG_DBDataSource;                                //pass it the ip username password and starting database
-                    builder.UserID = ENG_DBUserID;
-                    builder.Password = ENG_DBPassword;
-                    builder.InitialCatalog = ENG_DBInitialCatalog;
-                    ENGDBConnection = new SqlConnection(builder.ConnectionString);      //turn the string into a connection
-                    ENGDBConnection.Open();                                             //open the connection
-                    ThingsToDispose.Add(new Disposable(nameof(ENGDBConnection), ENGDBConnection));//add it to things to be disposed
+                    ENGDBConnection = new SqlConnectionStringBuilder();//builder to connect to the database
+                    ENGDBConnection.DataSource = ENG_DBDataSource;                                //pass it the ip username password and starting database
+                    ENGDBConnection.UserID = ENG_DBUserID;
+                    ENGDBConnection.Password = ENG_DBPassword;
+                    ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;
                 }
                 catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }               //log log log log logit
                 fixingconnection = false;                                               //unlock it

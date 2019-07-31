@@ -75,54 +75,58 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + " )");                                     //cap of the key section
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");                    //append value section to the command string
                 string SQLString = sqlStringBuilder.ToString();                                 //convert vuilder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                               //Comand Time!
-                    foreach (string key in keys)                                                //foreach key
-                    {
-                        switch (key)
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                               //Comand Time!
+                        foreach (string key in keys)                                                //foreach key
                         {
-                            case "Temperature":                                                 //if we have the Temperature convert to decimal and update
-                                command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key]));
-                                break;
+                            switch (key)
+                            {
+                                case "Temperature":                                                 //if we have the Temperature convert to decimal and update
+                                    command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key]));
+                                    break;
 
-                            case "Humidity":                                                 //if we have the Humidity convert to decimal and update
-                                command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key].ToString()));
-                                break;
+                                case "Humidity":                                                 //if we have the Humidity convert to decimal and update
+                                    command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key].ToString()));
+                                    break;
 
-                            case "FlowRate":                                                 //if we have the FlowRate convert to decimal and update
-                                command.Parameters.AddWithValue("@" + key, Convert.ToDecimal((receivedPacket[key])));
-                                break;
+                                case "FlowRate":                                                 //if we have the FlowRate convert to decimal and update
+                                    command.Parameters.AddWithValue("@" + key, Convert.ToDecimal((receivedPacket[key])));
+                                    break;
 
-                            case "ChangeOver5Seconds":                                       //if we have the ChangeOver5Seconds convert to decimal and update
-                                command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key]));
-                                break;
+                                case "ChangeOver5Seconds":                                       //if we have the ChangeOver5Seconds convert to decimal and update
+                                    command.Parameters.AddWithValue("@" + key, Convert.ToDecimal(receivedPacket[key]));
+                                    break;
 
-                            case "TimeStamp":                                                 //if we have the TimeStamp convert to datetime and update
-                                if (MissingStamp)
-                                    command.Parameters.AddWithValue("@" + key, DateTime.Now);
-                                else
-                                {
-                                    string TimeStamp = receivedPacket[key].ToString();
-                                    int year = 2000 + Convert.ToInt32(TimeStamp.Substring(0, 2));
-                                    int month = Convert.ToInt32(TimeStamp.Substring(3, 2));
-                                    int day = Convert.ToInt32(TimeStamp.Substring(6, 2));
-                                    int hour = Convert.ToInt32(TimeStamp.Substring(9, 2));
-                                    int minute = Convert.ToInt32(TimeStamp.Substring(12, 2));
-                                    int second = Convert.ToInt32(TimeStamp.Substring(15, 2));
-                                    command.Parameters.AddWithValue("@" + key, new DateTime(year, month, day, hour, minute, second));
-                                }
-                                break;
+                                case "TimeStamp":                                                 //if we have the TimeStamp convert to datetime and update
+                                    if (MissingStamp)
+                                        command.Parameters.AddWithValue("@" + key, DateTime.Now);
+                                    else
+                                    {
+                                        string TimeStamp = receivedPacket[key].ToString();
+                                        int year = 2000 + Convert.ToInt32(TimeStamp.Substring(0, 2));
+                                        int month = Convert.ToInt32(TimeStamp.Substring(3, 2));
+                                        int day = Convert.ToInt32(TimeStamp.Substring(6, 2));
+                                        int hour = Convert.ToInt32(TimeStamp.Substring(9, 2));
+                                        int minute = Convert.ToInt32(TimeStamp.Substring(12, 2));
+                                        int second = Convert.ToInt32(TimeStamp.Substring(15, 2));
+                                        command.Parameters.AddWithValue("@" + key, new DateTime(year, month, day, hour, minute, second));
+                                    }
+                                    break;
 
-                            case "Location":                                                 //if we have the Location update it
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
+                                case "Location":                                                 //if we have the Location update it
+                                    command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
+                                    break;
 
-                            default:
-                                break;
+                                default:
+                                    break;
+                            }
                         }
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
             catch (Exception ex)                                                            //catch exceptions
@@ -173,46 +177,50 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + " )");                                 //and append/capoff the strings
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");
                 SQLString = sqlStringBuilder.ToString();                                    //convert to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Command  Time Woo!
-                    foreach (string key in keys)                                            //foreach key
-                    {
-                        switch (key)
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Command  Time Woo!
+                        foreach (string key in keys)                                            //foreach key
                         {
-                            case "Warning":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
+                            switch (key)
+                            {
+                                case "Warning":
+                                    command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
+                                    break;
 
-                            case "Urgency":
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
-                                break;
+                                case "Urgency":
+                                    command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
+                                    break;
 
-                            case "TimeStamp":
-                                if (MissingStamp)
-                                    command.Parameters.AddWithValue("@" + key, DateTime.Now);
-                                else
-                                {
-                                    string TimeStamp = receivedPacket[key].ToString();
-                                    int year = 2000 + Convert.ToInt32(TimeStamp.Substring(0, 2));
-                                    int month = Convert.ToInt32(TimeStamp.Substring(3, 2));
-                                    int day = Convert.ToInt32(TimeStamp.Substring(6, 2));
-                                    int hour = Convert.ToInt32(TimeStamp.Substring(9, 2));
-                                    int minute = Convert.ToInt32(TimeStamp.Substring(12, 2));
-                                    int second = Convert.ToInt32(TimeStamp.Substring(15, 2));
-                                    command.Parameters.AddWithValue("@" + key, new DateTime(year, month, day, hour, minute, second));
-                                }
-                                break;
+                                case "TimeStamp":
+                                    if (MissingStamp)
+                                        command.Parameters.AddWithValue("@" + key, DateTime.Now);
+                                    else
+                                    {
+                                        string TimeStamp = receivedPacket[key].ToString();
+                                        int year = 2000 + Convert.ToInt32(TimeStamp.Substring(0, 2));
+                                        int month = Convert.ToInt32(TimeStamp.Substring(3, 2));
+                                        int day = Convert.ToInt32(TimeStamp.Substring(6, 2));
+                                        int hour = Convert.ToInt32(TimeStamp.Substring(9, 2));
+                                        int minute = Convert.ToInt32(TimeStamp.Substring(12, 2));
+                                        int second = Convert.ToInt32(TimeStamp.Substring(15, 2));
+                                        command.Parameters.AddWithValue("@" + key, new DateTime(year, month, day, hour, minute, second));
+                                    }
+                                    break;
 
-                            case "Location":
-                                command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
-                                break;
+                                case "Location":
+                                    command.Parameters.AddWithValue("@" + key, receivedPacket[key].ToString());
+                                    break;
 
-                            default:
-                                break;
+                                default:
+                                    break;
+                            }
                         }
+                        int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                     }
-                    int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                 }
             }
             catch (Exception ex)

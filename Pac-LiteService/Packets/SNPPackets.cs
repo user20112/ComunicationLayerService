@@ -92,44 +92,48 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the MachineInfoEntry
                 sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
                 string SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Commmand Time!
-                    command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with their respective values
-                    command.Parameters.AddWithValue("@Line", Line);
-                    command.Parameters.AddWithValue("@SNPID", snp_ID);
-                    command.Parameters.AddWithValue("@Theo", Theo);
-                    command.Parameters.AddWithValue("@Plant", Plant);
-                    command.Parameters.AddWithValue("@Engineer", Engineer);
-                    int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
-                }
-                bool Missing = CheckForDatabase(Line);
-
-                sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
-                if (Missing)                                                                //if we dont have a database yet
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
                 {
-                    sqlStringBuilder.Append(" CREATE DATABASE [" + Line + "];");            //create one
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Commmand Time!
+                        command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with their respective values
+                        command.Parameters.AddWithValue("@Line", Line);
+                        command.Parameters.AddWithValue("@SNPID", snp_ID);
+                        command.Parameters.AddWithValue("@Theo", Theo);
+                        command.Parameters.AddWithValue("@Plant", Plant);
+                        command.Parameters.AddWithValue("@Engineer", Engineer);
+                        int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
+                    bool Missing = CheckForDatabase(Line);
+
+                    sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
+                    if (Missing)                                                                //if we dont have a database yet
+                    {
+                        sqlStringBuilder.Append(" CREATE DATABASE [" + Line + "];");            //create one
+                        SQLString = sqlStringBuilder.ToString();                                //Convert the builder to the string
+                        using (SqlCommand command = new SqlCommand(SQLString, connection))
+                        {                                                                           //Commmand Time!
+                            int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                            Controller.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                        }
+                    }
+                    sqlStringBuilder = new StringBuilder();
+                    sqlStringBuilder.Append(" USE [" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
+                    sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
+                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
+                    sqlStringBuilder.Append(" ) ON [PRIMARY] ");
+                    sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
+                    sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
+                    sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
+                    sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar](30) NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
                     SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
-                    using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Commmand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
-                }
-                sqlStringBuilder = new StringBuilder();
-                sqlStringBuilder.Append(" USE [" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
-                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
-                sqlStringBuilder.Append(" ) ON [PRIMARY] ");
-                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
-                sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
-                sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar](30) NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
-                SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Commmand Time!
-                    int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
             catch (Exception ex)
@@ -162,33 +166,37 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the edit command using Machine as the resource name
                 sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo, Engineer = @Engineer  where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();                             //convert the builder to a string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //command time!
-                    command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with values
-                    command.Parameters.AddWithValue("@Line", Line);
-                    command.Parameters.AddWithValue("@SNPID", snp_ID);
-                    command.Parameters.AddWithValue("@Theo", Theo);
-                    command.Parameters.AddWithValue("@Engineer", Engineer);
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
-                }
-                sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
-                sqlStringBuilder.Append(" USE [" + Line + "] ");                             //load alter table command
-                sqlStringBuilder.Append("Alter Table [" + receivedPacket["Machine"] + "ShortTimeStatistics] ADD ");
-                string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
-                string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
-                string Errors = "";                                                         //this string is added to the sql
-                foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
                 {
-                    Errors += ("[" + error + "] [bit] NOT NULL DEFAULT 0, ");                             //column is a bit feild that is nullable
-                }
-                Errors = Errors.Substring(0, Errors.Length - 2);                            //remove extra space and comma
-                sqlStringBuilder.Append(Errors + ";");                                      //append a semicolon
-                SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Comand Time Again!
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //command time!
+                        command.Parameters.AddWithValue("@machine", machineName);               //replace all parameters with values
+                        command.Parameters.AddWithValue("@Line", Line);
+                        command.Parameters.AddWithValue("@SNPID", snp_ID);
+                        command.Parameters.AddWithValue("@Theo", Theo);
+                        command.Parameters.AddWithValue("@Engineer", Engineer);
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
+                    sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
+                    sqlStringBuilder.Append(" USE [" + Line + "] ");                             //load alter table command
+                    sqlStringBuilder.Append("Alter Table [" + receivedPacket["Machine"] + "ShortTimeStatistics] ADD ");
+                    string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
+                    string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
+                    string Errors = "";                                                         //this string is added to the sql
+                    foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
+                    {
+                        Errors += ("[" + error + "] [bit] NOT NULL DEFAULT 0, ");                             //column is a bit feild that is nullable
+                    }
+                    Errors = Errors.Substring(0, Errors.Length - 2);                            //remove extra space and comma
+                    sqlStringBuilder.Append(Errors + ";");                                      //append a semicolon
+                    SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Comand Time Again!
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
                 }
             }
             catch (Exception ex)                                                            //catch exceptions
@@ -217,22 +225,26 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load sql command and edit for machine name as the resource name
                 sqlStringBuilder.Append(" delete from MachineInfoTable where MachineName = @machine;");//drop the reference
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Comand Time!
-                    command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());//replace parameters with values
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
-                }
-                sqlStringBuilder = new StringBuilder();                                     //clear string builder
-                sqlStringBuilder.Append(" USE [" + Line + "] ");                            //build next section
-                sqlStringBuilder.Append("drop table [" + machineName + "];");
-                sqlStringBuilder.Append("drop table [" + machineName + "DownTimes];");
-                sqlStringBuilder.Append("drop table [" + machineName + "ShortTimeStatistics];");
-                SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Comand Time!
-                    int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Comand Time!
+                        command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());//replace parameters with values
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
+                    sqlStringBuilder = new StringBuilder();                                     //clear string builder
+                    sqlStringBuilder.Append(" USE [" + Line + "] ");                            //build next section
+                    sqlStringBuilder.Append("drop table [" + machineName + "];");
+                    sqlStringBuilder.Append("drop table [" + machineName + "DownTimes];");
+                    sqlStringBuilder.Append("drop table [" + machineName + "ShortTimeStatistics];");
+                    SQLString = sqlStringBuilder.ToString();                                    //Convert builder to string
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Comand Time!
+                        int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
                 }
             }
             catch (Exception ex)                                                            //catche exceptions
@@ -306,18 +318,22 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it of
                 sqlStringBuilder.Append("Values ( " + valueSection + ");");                 //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Comand Time!
-                    command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());//replace parameters with values
-                    command.Parameters.AddWithValue("@Good", Convert.ToInt32(receivedPacket["Good"]));
-                    command.Parameters.AddWithValue("@Bad", Convert.ToInt32(receivedPacket["Bad"]));
-                    command.Parameters.AddWithValue("@Empty", Convert.ToInt32(receivedPacket["Empty"]));
-                    command.Parameters.AddWithValue("@Indexes", Convert.ToInt32(receivedPacket["Indexes"]));
-                    command.Parameters.AddWithValue("@UOM", receivedPacket["UOM"].ToString());
-                    command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
-                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add the machine name
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Comand Time!
+                        command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());//replace parameters with values
+                        command.Parameters.AddWithValue("@Good", Convert.ToInt32(receivedPacket["Good"]));
+                        command.Parameters.AddWithValue("@Bad", Convert.ToInt32(receivedPacket["Bad"]));
+                        command.Parameters.AddWithValue("@Empty", Convert.ToInt32(receivedPacket["Empty"]));
+                        command.Parameters.AddWithValue("@Indexes", Convert.ToInt32(receivedPacket["Indexes"]));
+                        command.Parameters.AddWithValue("@UOM", receivedPacket["UOM"].ToString());
+                        command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
+                        command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add the machine name
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    }
                 }
             }
             catch (Exception ex)                                                            //catch exceptions
@@ -404,34 +420,38 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values (" + valueSection + ");");                  //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Command Time!
-                    switch (Convert.ToInt32(receivedPacket["StatusCode"]))
-                    {
-                        case 0:
-                            command.Parameters.AddWithValue("@StatusCode", "Unscheduled");//replace perameters with values
-                            break;
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Command Time!
+                        switch (Convert.ToInt32(receivedPacket["StatusCode"]))
+                        {
+                            case 0:
+                                command.Parameters.AddWithValue("@StatusCode", "Unscheduled");//replace perameters with values
+                                break;
 
-                        case 1:
-                            command.Parameters.AddWithValue("@StatusCode", "Scheduled Down");//replace perameters with values
-                            break;
+                            case 1:
+                                command.Parameters.AddWithValue("@StatusCode", "Scheduled Down");//replace perameters with values
+                                break;
 
-                        case 2:
-                            command.Parameters.AddWithValue("@StatusCode", "Running");//replace perameters with values
-                            break;
+                            case 2:
+                                command.Parameters.AddWithValue("@StatusCode", "Running");//replace perameters with values
+                                break;
 
-                        case 3:
-                            command.Parameters.AddWithValue("@StatusCode", "P/M");//replace perameters with values
-                            break;
+                            case 3:
+                                command.Parameters.AddWithValue("@StatusCode", "P/M");//replace perameters with values
+                                break;
+                        }
+                        command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
+                        command.Parameters.AddWithValue("@Code", Convert.ToInt32(receivedPacket["Code"]));
+                        command.Parameters.AddWithValue("@MReason", receivedPacket["MReason"].ToString());
+                        command.Parameters.AddWithValue("@UReason", receivedPacket["UReason"].ToString());
+                        command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
+                        command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
-                    command.Parameters.AddWithValue("@NAED", receivedPacket["NAED"].ToString());
-                    command.Parameters.AddWithValue("@Code", Convert.ToInt32(receivedPacket["Code"]));
-                    command.Parameters.AddWithValue("@MReason", receivedPacket["MReason"].ToString());
-                    command.Parameters.AddWithValue("@UReason", receivedPacket["UReason"].ToString());
-                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
-                    command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
                 QRQCDownTimePacket(message);
             }
@@ -452,7 +472,7 @@ namespace SNPService
             {
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobjectif (Convert.ToInt32(receivedPacket["Status"]))
-                QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()));
+                QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()), Controller);
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
                 string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
@@ -462,33 +482,37 @@ namespace SNPService
                 string ProductID = QRQCRepo.GetProductId(receivedPacket["NAED"].ToString());
                 int Thru = QRQCRepo.GetOutTheo(receivedPacket["NAED"].ToString());
                 int Goal = QRQCRepo.GetOutGoal(receivedPacket["NAED"].ToString());
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
                 {
-                    HolderTime = DateTime.Now;                                                  //Command Time!
-                    command.Parameters.AddWithValue("@StatusBegin", HolderTime);                //add a timestamp
-                    command.Parameters.AddWithValue("@ResourceID", ResourceId);                 //add rest of values
-                    switch (Convert.ToInt32(receivedPacket["StatusCode"]))                      //convert status id to QRQC Status ID
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {
-                        case 1://scheduled
-                            command.Parameters.AddWithValue("@StatusID", 2);
-                            break;
+                        HolderTime = DateTime.Now;                                                  //Command Time!
+                        command.Parameters.AddWithValue("@StatusBegin", HolderTime);                //add a timestamp
+                        command.Parameters.AddWithValue("@ResourceID", ResourceId);                 //add rest of values
+                        switch (Convert.ToInt32(receivedPacket["StatusCode"]))                      //convert status id to QRQC Status ID
+                        {
+                            case 1://scheduled
+                                command.Parameters.AddWithValue("@StatusID", 2);
+                                break;
 
-                        case 2://Running
-                            command.Parameters.AddWithValue("@StatusID", 0);
-                            break;
+                            case 2://Running
+                                command.Parameters.AddWithValue("@StatusID", 0);
+                                break;
 
-                        case 3://PM
-                            command.Parameters.AddWithValue("@StatusID", 1);
-                            break;
+                            case 3://PM
+                                command.Parameters.AddWithValue("@StatusID", 1);
+                                break;
+                        }
+                        command.Parameters.AddWithValue("@ProductID", ProductID);
+                        command.Parameters.AddWithValue("@Thru", Thru);
+                        command.Parameters.AddWithValue("@Goal", Goal);
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
-                    command.Parameters.AddWithValue("@ProductID", ProductID);            
-                    command.Parameters.AddWithValue("@Thru", Thru);                 
-                    command.Parameters.AddWithValue("@Goal", Goal);                 
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                    new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line), Controller);
+                    Controller.DiagnosticOut("Changed QRQC Status", 2);
                 }
-                new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line));
-                Controller.DiagnosticOut("Changed QRQC Status", 2);
             }
             catch (Exception ex)                                                            //catch exceptions
             {
@@ -572,22 +596,26 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values ( " + valueSection + ");");//append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Comand Time!
-                    foreach (string key in keys)                                            //foreach key
-                    {
-                        if (key != "Machine")                                               //Except Machine
-                            if (key != "HeadNumber")                                        //and head number
-                            {                                                               // convert to bool
-                                command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
-                            }
-                            else                                                            //if it is a head number add it as an int
-                                command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Comand Time!
+                        foreach (string key in keys)                                            //foreach key
+                        {
+                            if (key != "Machine")                                               //Except Machine
+                                if (key != "HeadNumber")                                        //and head number
+                                {                                                               // convert to bool
+                                    command.Parameters.AddWithValue("@" + key, 1 == Convert.ToInt32(receivedPacket[key]));
+                                }
+                                else                                                            //if it is a head number add it as an int
+                                    command.Parameters.AddWithValue("@" + key, Convert.ToInt32(receivedPacket[key]));
+                        }
+                        command.Parameters.AddWithValue("@Timestamp", DateTime.Now);            //add a timestamp
+                        command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add teh machine name
+                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
-                    command.Parameters.AddWithValue("@Timestamp", DateTime.Now);            //add a timestamp
-                    command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add teh machine name
-                    int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                    Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                 }
             }
             catch (Exception ex)                                                            //catch exceptions
@@ -723,19 +751,23 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + "] ");//select database
                 sqlStringBuilder.Append("select MachineID, Line from MachineInfoTable where MachineName='" + Machine + "';");  //start loading the command into the string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
-                using (SqlCommand command = new SqlCommand(SQLString, Controller.ENGDBConnection))
-                {                                                                           //Comand Time!
-                    using (IDataReader dr = command.ExecuteReader())
-                    {
-                        while (dr.Read())
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    {                                                                           //Comand Time!
+                        using (IDataReader dr = command.ExecuteReader())
                         {
-                            result[0] = dr[0].ToString();
-                            result[1] = dr[1].ToString();
+                            while (dr.Read())
+                            {
+                                result[0] = dr[0].ToString();
+                                result[1] = dr[1].ToString();
+                            }
                         }
                     }
+                    return result;
+                    //return the result
                 }
-                return result;
-                //return the result
             }
             catch (Exception ex)
             {
@@ -758,17 +790,21 @@ namespace SNPService
             bool result = true;
             try
             {
-                using (SqlCommand command = new SqlCommand("SELECT name from sys.databases where name='" + Line + "'", Controller.ENGDBConnection))
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
                 {
-                    using (IDataReader dr = command.ExecuteReader())
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand("SELECT name from sys.databases where name='" + Line + "'", connection))
                     {
-                        while (dr.Read())
+                        using (IDataReader dr = command.ExecuteReader())
                         {
-                            result = false;
+                            while (dr.Read())
+                            {
+                                result = false;
+                            }
                         }
                     }
+                    return result;
                 }
-                return result;
             }
             catch (Exception ex)
             {
@@ -805,31 +841,35 @@ namespace SNPService
             {
                 string dbTable = "[QRQC].[dbo].[QRQC_Config_view]";
                 string query = "SELECT * FROM " + dbTable + " Where ResourceName ='" + machine + "';";
-                SqlCommand command = new SqlCommand(query, Controller.ENGDBConnection);
-                using (SqlDataReader reader = command.ExecuteReader())
+                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
                 {
-                    while (reader.Read())
+                    connection.Open();                                                          //open the connection
+                    SqlCommand command = new SqlCommand(query, connection);
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        Line l = new Line();
-                        l.DisplayName = reader.GetString(0);
-                        l.Automatic = reader.GetBoolean(1);
-                        l.GoodProductPerEntry = reader.GetInt16(2);
-                        l.GoodProductSQLVar = reader.GetString(3);
-                        l.TableName = reader.GetString(4);
-                        l.CStart = reader.GetInt32(5);
-                        l.CEnd = reader.GetInt32(6);
-                        l.AStart = reader.GetInt32(7);
-                        l.AEnd = reader.GetInt32(8);
-                        l.BStart = reader.GetInt32(9);
-                        l.BEnd = reader.GetInt32(10);
-                        l.Name = reader.GetString(11);
-                        l.ProductInputSQLVar = reader.GetString(12);
-                        l.isFinalMachine = reader.GetBoolean(13);
-                        l.FUDGE = reader.GetDouble(14);
-                        return l;
+                        while (reader.Read())
+                        {
+                            Line l = new Line();
+                            l.DisplayName = reader.GetString(0);
+                            l.Automatic = reader.GetBoolean(1);
+                            l.GoodProductPerEntry = reader.GetInt16(2);
+                            l.GoodProductSQLVar = reader.GetString(3);
+                            l.TableName = reader.GetString(4);
+                            l.CStart = reader.GetInt32(5);
+                            l.CEnd = reader.GetInt32(6);
+                            l.AStart = reader.GetInt32(7);
+                            l.AEnd = reader.GetInt32(8);
+                            l.BStart = reader.GetInt32(9);
+                            l.BEnd = reader.GetInt32(10);
+                            l.Name = reader.GetString(11);
+                            l.ProductInputSQLVar = reader.GetString(12);
+                            l.isFinalMachine = reader.GetBoolean(13);
+                            l.FUDGE = reader.GetDouble(14);
+                            return l;
+                        }
                     }
+                    return null;
                 }
-                return null;
             }
             catch (Exception ex)
             {

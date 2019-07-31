@@ -8,11 +8,13 @@ namespace SNPService.Comunications.QRQC
     {
         public string connectionString;         //used for connecting to SQL
         public Line line;                       // the line we are talking about
+        private SNPService Controller;
 
-        public Repo(Line l)
+        public Repo(Line l, SNPService controller)
         {
             line = l;
-            connectionString =ConfigurationManager.AppSettings["DBConnectionStringA"] + "User Id= camstaruser; Password= c@mst@rus3r;";
+            connectionString = ConfigurationManager.AppSettings["DBConnectionStringA"] + "User Id= camstaruser; Password= c@mst@rus3r;";
+            Controller = controller;
         }
 
         public string GetProductFamilyId(string ProductName)
@@ -66,6 +68,7 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
+                    Controller.DiagnosticOut(ex.ToString(), 1);
                 }
             }
 
@@ -122,6 +125,7 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
+                    Controller.DiagnosticOut(ex.ToString(), 1);
                 }
             }
 
@@ -132,7 +136,7 @@ namespace SNPService.Comunications.QRQC
         {
             double t = 0; //we'll call this a timespan for now
 
-            string speedTable =ConfigurationManager.AppSettings["speedTable"];
+            string speedTable = ConfigurationManager.AppSettings["speedTable"];
 
             string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
 
@@ -178,6 +182,7 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
+                    Controller.DiagnosticOut(ex.ToString(), 1);
                 }
             }
 

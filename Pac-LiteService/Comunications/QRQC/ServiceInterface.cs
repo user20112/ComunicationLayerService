@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Text;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Diagnostics;
+using System.Text;
 using System.Web.Script.Serialization;
 
 namespace SNPService.Comunications.QRQC
@@ -10,31 +10,34 @@ namespace SNPService.Comunications.QRQC
     public class SynchronousSocketClient
     {
         private static bool testConnection = false;
-        public SynchronousSocketClient(Instructions i)
+        private static SNPService Controller;
+
+        public SynchronousSocketClient(Instructions i, SNPService controller)
         {
-			testConnection = false;
+            testConnection = false;
+            string serializedObject;
+            JavaScriptSerializer jss = new JavaScriptSerializer();
+            serializedObject = jss.Serialize(i);
+            StartClient(serializedObject);
+            Controller = controller;
+        }
+
+        public SynchronousSocketClient(Instructions i, bool test) //only for testing the connection (crude)
+        {
+            if (test) testConnection = true;
+            else testConnection = false;
             string serializedObject;
             JavaScriptSerializer jss = new JavaScriptSerializer();
             serializedObject = jss.Serialize(i);
             StartClient(serializedObject);
         }
 
-        public SynchronousSocketClient(Instructions i, bool test) //only for testing the connection (crude)
-        {
-			if (test) testConnection = true;
-			else testConnection = false;
-            string serializedObject;
-            JavaScriptSerializer jss = new JavaScriptSerializer();
-            serializedObject = jss.Serialize(i);
-            StartClient(serializedObject);
-        }
-		
         public static void StartClient(string serialized)
         {
             // Data buffer for incoming data.
             byte[] bytes = new byte[1024];
 
-            // Connect to a remote device.  
+            // Connect to a remote device.
             try
             {
                 Stopwatch stopWatch = new Stopwatch();
@@ -44,7 +47,7 @@ namespace SNPService.Comunications.QRQC
                 IPAddress ipAddress = IPAddress.Parse(SERVERIP);
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, 61752);
 
-                // Create a TCP/IP  socket.  
+                // Create a TCP/IP  socket.
                 Socket sender = new Socket(ipAddress.AddressFamily,
                     SocketType.Stream, ProtocolType.Tcp);
 
@@ -56,21 +59,21 @@ namespace SNPService.Comunications.QRQC
                     Console.WriteLine("Socket connected to {0}",
                         sender.RemoteEndPoint.ToString());
 
-                    // Encode the data string into a byte array.  
+                    // Encode the data string into a byte array.
                     byte[] msg = Encoding.ASCII.GetBytes(serialized + "<EOF>");
 
-                    // Send the data through the socket.  
-                    if(testConnection)
+                    // Send the data through the socket.
+                    if (testConnection)
                     {
                         stopWatch.Start();
                     }
                     int bytesSent = sender.Send(msg);
 
-                    // Receive the response from the remote device.  
+                    // Receive the response from the remote device.
                     int bytesRec = sender.Receive(bytes);
                     string recv = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                    
-                    // Release the socket.  
+
+                    // Release the socket.
                     sender.Shutdown(SocketShutdown.Both);
                     sender.Close();
 
@@ -79,21 +82,15 @@ namespace SNPService.Comunications.QRQC
                         stopWatch.Stop();
                     }
                 }
-                catch (ArgumentNullException ane)
+                catch (Exception ex)
                 {
-				}
-                catch (SocketException se)
-                {
-				}
-                catch (Exception e)
-                {
-				}
-
+                    Controller.DiagnosticOut(ex.ToString(), 1);
+                }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e.ToString());
-			}
+                Controller.DiagnosticOut(ex.ToString(), 1);
+            }
         }
     }
 }
