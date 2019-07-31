@@ -19,8 +19,7 @@ namespace SNPService
     {
         #region Variable Section
 
-        public Repo QRQCRepo;
-        private SNPService Controller;                                                  // Contains either the service or form that owns this class.
+        public Repo QRQCRepo;                                               // Contains either the service or form that owns this class.
         //public TopicPublisher Publisher;                                                    // publishes to the Pac-Light Outbound topic
 
         //public UdpClient MDEClient;                                                         // depreciated comunication to MDE over udp
@@ -36,9 +35,8 @@ namespace SNPService
         //private int MDEClientPort;                                                          // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                              // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
 
-        public SNPPackets(SNPService controller)
-        {
-            Controller = controller;                                                        //set the owner of this class
+        public SNPPackets()
+        {                                                       //set the owner of this class
             CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];          // pull Camstar username
             CamstarPassword = ConfigurationManager.AppSettings["CamstarPassword"];          //and camstar password
             CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];                      //and camstar ip
@@ -60,7 +58,7 @@ namespace SNPService
         {
             try                                                                             //try loop in case command fails.
             {
-                Controller.DiagnosticOut("New Machine Packet!", 2);                             // log the packet as have been received
+                SNPService.DiagnosticOut("New Machine Packet!", 2);                             // log the packet as have been received
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert the json to an object
                 string machineName = receivedPacket["Machine"].ToString();                      //get the important sections of the packet out ( that arent errors)
@@ -85,14 +83,14 @@ namespace SNPService
                 }
                 catch (Exception ex)                                                                          //if this fails set it to defualt no errors
                 {
-                    Controller.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
                     Errors = "";
                 }
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the MachineInfoEntry
                 sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
                 string SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -104,7 +102,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Plant", Plant);
                         command.Parameters.AddWithValue("@Engineer", Engineer);
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                     bool Missing = CheckForDatabase(Line);
 
@@ -116,7 +114,7 @@ namespace SNPService
                         using (SqlCommand command = new SqlCommand(SQLString, connection))
                         {                                                                           //Commmand Time!
                             int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                            Controller.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                            SNPService.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
                         }
                     }
                     sqlStringBuilder = new StringBuilder();
@@ -132,7 +130,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Commmand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
             }
@@ -140,9 +138,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    Controller.ReastablishSQL(NewMachinePacket, message);                   //reastablish it
+                    SNPService.ReastablishSQL(NewMachinePacket, message);                   //reastablish it
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
             }
         }
 
@@ -153,7 +151,7 @@ namespace SNPService
         {
             try                                                                             //try loop in case command fails.
             {
-                Controller.DiagnosticOut("Edit Machine Packet!", 2);                            // log the packet as have been received
+                SNPService.DiagnosticOut("Edit Machine Packet!", 2);                            // log the packet as have been received
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //Convert it into a jobject
                 string machineName = receivedPacket["Machine"].ToString();                      //gather important sections into variables
@@ -166,7 +164,7 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the edit command using Machine as the resource name
                 sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo, Engineer = @Engineer  where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();                             //convert the builder to a string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -177,7 +175,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Theo", Theo);
                         command.Parameters.AddWithValue("@Engineer", Engineer);
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                     sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
                     sqlStringBuilder.Append(" USE [" + Line + "] ");                             //load alter table command
@@ -195,7 +193,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Comand Time Again!
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
             }
@@ -203,9 +201,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    Controller.ReastablishSQL(EditMachinePacket, message);                  //reestablish connection
+                    SNPService.ReastablishSQL(EditMachinePacket, message);                  //reestablish connection
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
@@ -214,7 +212,7 @@ namespace SNPService
         /// </summary>
         public void DeleteMachinePacket(string message)
         {
-            Controller.DiagnosticOut("Delete Machine Packet!", 2);                          // log the packet as have been received
+            SNPService.DiagnosticOut("Delete Machine Packet!", 2);                          // log the packet as have been received
             string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
             JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert it to a Jobject
             string Line = receivedPacket["Line"].ToString();
@@ -225,14 +223,14 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load sql command and edit for machine name as the resource name
                 sqlStringBuilder.Append(" delete from MachineInfoTable where MachineName = @machine;");//drop the reference
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Comand Time!
                         command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());//replace parameters with values
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                     sqlStringBuilder = new StringBuilder();                                     //clear string builder
                     sqlStringBuilder.Append(" USE [" + Line + "] ");                            //build next section
@@ -243,7 +241,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Comand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
             }
@@ -251,9 +249,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    Controller.ReastablishSQL(DeleteMachinePacket, message);                //restablish the connection
+                    SNPService.ReastablishSQL(DeleteMachinePacket, message);                //restablish the connection
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
@@ -262,7 +260,7 @@ namespace SNPService
         /// </summary>
         public void IndexSummaryPacket(string message)
         {
-            Controller.DiagnosticOut("Fifteen Minute Packet Received!", 3);                 //logit
+            SNPService.DiagnosticOut("Fifteen Minute Packet Received!", 3);                 //logit
             Task.Run(() => SQLIndexSummary(message));                                       //save data to sql async, return value doesnt matter
             Task.Run(() => CamstarIndexSummary(message));                                   //send data to Camstar, return value doesnt matter
         }
@@ -272,7 +270,7 @@ namespace SNPService
         /// </summary>
         public void DowntimePacket(string message)
         {
-            Controller.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
+            SNPService.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
             Task.Run(() => SQLDownTimePacket(message)); //Save data to SQL, return value doesnt matter
             Task.Run(() => CamstarDowntimePacket(message));                                 //send data to Camstar, return value doesnt matter
         }
@@ -282,7 +280,7 @@ namespace SNPService
         /// </summary>
         public void ShortTimeStatisticPacket(string message)
         {
-            Controller.DiagnosticOut("Short Time Statistic Packet Received!", 3);           //logit
+            SNPService.DiagnosticOut("Short Time Statistic Packet Received!", 3);           //logit
             Task.Run(() => SQLShortTimeStatisticPacket(message));                           //Save data to sql return value doesnt matter
             //Task.Run(() => MDEShortTimeStatisticPacket(message));                         //Send Message to UDP port for MDE (depreciated but kept for incasei t is used elsewhere
         }
@@ -318,7 +316,7 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it of
                 sqlStringBuilder.Append("Values ( " + valueSection + ");");                 //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -332,7 +330,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
                         command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add the machine name
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
             }
@@ -340,9 +338,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
                 {
-                    Controller.ReastablishSQL(SQLIndexSummary, message);                    //reastablish it
+                    SNPService.ReastablishSQL(SQLIndexSummary, message);                    //reastablish it
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else log the error and move on
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else log the error and move on
             }
         }
 
@@ -388,7 +386,7 @@ namespace SNPService
                 PacketStringBuilder.Append("<__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__execute/><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { Controller.DiagnosticOut(ex.ToString(), 2); }
+            catch (Exception ex) { SNPService.DiagnosticOut(ex.ToString(), 2); }
         }
 
         /// <summary>
@@ -420,7 +418,7 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values (" + valueSection + ");");                  //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -450,7 +448,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                         command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
                 QRQCDownTimePacket(message);
@@ -459,9 +457,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    Controller.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
+                    SNPService.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
@@ -472,7 +470,7 @@ namespace SNPService
             {
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobjectif (Convert.ToInt32(receivedPacket["Status"]))
-                QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()), Controller);
+                QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()));
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
                 string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
@@ -482,7 +480,7 @@ namespace SNPService
                 string ProductID = QRQCRepo.GetProductId(receivedPacket["NAED"].ToString());
                 int Thru = QRQCRepo.GetOutTheo(receivedPacket["NAED"].ToString());
                 int Goal = QRQCRepo.GetOutGoal(receivedPacket["NAED"].ToString());
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -508,19 +506,19 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Thru", Thru);
                         command.Parameters.AddWithValue("@Goal", Goal);
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
-                    new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line), Controller);
-                    Controller.DiagnosticOut("Changed QRQC Status", 2);
+                    new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line));
+                    SNPService.DiagnosticOut("Changed QRQC Status", 2);
                 }
             }
             catch (Exception ex)                                                            //catch exceptions
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    Controller.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
+                    SNPService.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
             }
         }
 
@@ -564,7 +562,7 @@ namespace SNPService
                 PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { Controller.DiagnosticOut(ex.ToString(), 2); }
+            catch (Exception ex) { SNPService.DiagnosticOut(ex.ToString(), 2); }
         }
 
         /// <summary>
@@ -596,7 +594,7 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values ( " + valueSection + ");");//append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -614,7 +612,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Timestamp", DateTime.Now);            //add a timestamp
                         command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add teh machine name
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
             }
@@ -622,9 +620,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    Controller.ReastablishSQL(SQLShortTimeStatisticPacket, message);        //reestablish it
+                    SNPService.ReastablishSQL(SQLShortTimeStatisticPacket, message);        //reestablish it
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //log it
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //log it
             }
         }
 
@@ -673,7 +671,7 @@ namespace SNPService
         //    }
         //    catch (Exception ex)                                                            //catch exceptions
         //    {
-        //        Controller.DiagnosticOut(ex.ToString(), 1);                                 //logit and move on
+        //        SNPService.DiagnosticOut(ex.ToString(), 1);                                 //logit and move on
         //    }
         //}
 
@@ -706,7 +704,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                            // If an error occurred return null string
             {
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //logit
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //logit
                 return "";                                                                  //return null string
             }
         }
@@ -751,7 +749,7 @@ namespace SNPService
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + "] ");//select database
                 sqlStringBuilder.Append("select MachineID, Line from MachineInfoTable where MachineName='" + Machine + "';");  //start loading the command into the string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -777,7 +775,7 @@ namespace SNPService
                     return GetMachineIDAndLine(Machine);
                 }
                 else
-                    Controller.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                    SNPService.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
                 return new string[2] { "", "" };
             }
         }
@@ -790,7 +788,7 @@ namespace SNPService
             bool result = true;
             try
             {
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand("SELECT name from sys.databases where name='" + Line + "'", connection))
@@ -814,7 +812,7 @@ namespace SNPService
                     return CheckForDatabase(Line);
                 }
                 else
-                    Controller.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                    SNPService.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
                 return true;
             }
         }
@@ -841,7 +839,7 @@ namespace SNPService
             {
                 string dbTable = "[QRQC].[dbo].[QRQC_Config_view]";
                 string query = "SELECT * FROM " + dbTable + " Where ResourceName ='" + machine + "';";
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     SqlCommand command = new SqlCommand(query, connection);
@@ -875,7 +873,7 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    Controller.ReastablishSQL(DoNothing, machine);        //reestablish it
+                    SNPService.ReastablishSQL(DoNothing, machine);        //reestablish it
                     return LoadResources(machine);
                 }
                 return null;

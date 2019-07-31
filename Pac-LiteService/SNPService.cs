@@ -36,7 +36,7 @@ namespace SNPService
             DiagnosticOut("Stopped", 3);                                                        // report making it through stoping
         }
 
-        public void DiagnosticOut(string message, int LoggingLevel)                             //report status mesages to a file
+        public static void DiagnosticOut(string message, int LoggingLevel)                             //report status mesages to a file
         {
             try
             {
@@ -74,16 +74,16 @@ namespace SNPService
 
         #region Variable Section
 
-        public int LogggingLevel;                                                               //what logging level the service has selected
-        public bool Listening;                                                                  //is the service listening to non control packets
-        public bool Sending;                                                                    //is the service sending packets out to the real world
+        public static int LogggingLevel;                                                               //what logging level the service has selected
+        public static bool Listening;                                                                  //is the service listening to non control packets
+        public static bool Sending;                                                                    //is the service sending packets out to the real world
 
         public delegate void FunctionThatFailed(string message);                                //Delegate for the function that failed to be passed to restablish connection. gets called after connection is reastablished
 
         private delegate void SetTextCallback(string text);                                     //delegate for the function that is to be called when a message is received from the topic subscriber
 
         private TopicSubscriber MainInputSubsriber;                                             //Main subscriber subs to SNP.Inbound
-        public SqlConnectionStringBuilder ENGDBConnection;                                                   //Connection to the ENGDB default db is SNPDb.
+        public static SqlConnectionStringBuilder ENGDBConnection;                                                   //Connection to the ENGDB default db is SNPDb.
         private EMPPackets EMPPackets;                                                          //collection of all EMP Packets and functions
         private SNPPackets SNPPackets;                                                          //collection of all snp packets and functions
         private ControlPackets ControlPackets;                                                  //collection of all Control packets and function
@@ -92,14 +92,14 @@ namespace SNPService
         private string Broker;                                                                  //IP of the broker we are connecting to
         private string ClientID;                                                                //Client ID for the SNP Service
         private string ConsumerID;                                                              //Consumer ID for the SNP service
-        private string ENG_DBDataSource;                                                        //Engineering Database Ip Address
-        private string ENG_DBUserID;                                                            //Engineering databse user used to comunicate
-        private string ENG_DBPassword;                                                          //Engineering databse password used to comunicate
-        private string ENG_DBInitialCatalog;                                                    //Engineering Database that we are talking to
+        private static string ENG_DBDataSource;                                                        //Engineering Database Ip Address
+        private static string ENG_DBUserID;                                                            //Engineering databse user used to comunicate
+        private static string ENG_DBPassword;                                                          //Engineering databse password used to comunicate
+        private static string ENG_DBInitialCatalog;                                                    //Engineering Database that we are talking to
 
         private List<Disposable> ThingsToDispose;                                               //whenever you make something that inherits from IDisposable and needs to be disposed add to this. iterates through at end disposing of items.
 
-        private bool fixingconnection = false;                                                  //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
+        private static bool fixingconnection = false;                                                  //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
 
         #endregion Variable Section
 
@@ -317,9 +317,9 @@ namespace SNPService
             LogggingLevel = Convert.ToInt32(ConfigurationManager.AppSettings["LogggingLevel"]);
             Listening = Convert.ToInt32(ConfigurationManager.AppSettings["Listening"]) == 1;
             Sending = Convert.ToInt32(ConfigurationManager.AppSettings["Sending"]) == 1;
-            EMPPackets = new EMPPackets(this);                                              //generate the packet classes
-            SNPPackets = new SNPPackets(this);
-            ControlPackets = new ControlPackets(this);
+            EMPPackets = new EMPPackets();                                              //generate the packet classes
+            SNPPackets = new SNPPackets();
+            ControlPackets = new ControlPackets();
             try
             {
                 ThingsToDispose = new List<Disposable>();                                   //reset list of objects that need to be disposed
@@ -338,7 +338,7 @@ namespace SNPService
         /// <summary>
         /// Called whenever there seems to be no sql connection
         /// </summary>
-        public void ReastablishSQL(FunctionThatFailed functionThatFailed, string message)
+        public static void ReastablishSQL(FunctionThatFailed functionThatFailed, string message)
         {
             if (fixingconnection)                                                       //if we are already fixing the connection
             {

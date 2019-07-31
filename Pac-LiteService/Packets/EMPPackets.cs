@@ -14,13 +14,11 @@ namespace SNPService
     {
         #region Variable Section
 
-        private SNPService Controller;
         public const string TopicName = "SNP.Outbound";
         public TopicPublisher Publisher;
 
-        public EMPPackets(SNPService controller)
+        public EMPPackets()
         {
-            Controller = controller;
         }
 
         #endregion Variable Section
@@ -32,7 +30,7 @@ namespace SNPService
         /// </summary>
         public void WarningPacket(string message)
         {
-            Controller.DiagnosticOut("EMPWarningPacketReceived!", 3);                    //log it
+            SNPService.DiagnosticOut("EMPWarningPacketReceived!", 3);                    //log it
             Task.Run(() => SQLEMPWarningPacket(message));                               //run it
             Task.Run(() => MQTTEMPWarningPacket(message));                              //send it
         }
@@ -42,7 +40,7 @@ namespace SNPService
         /// </summary>
         public void IndexPacket(string message)
         {
-            Controller.DiagnosticOut("EMPIndexPacketReceived!", 2);                             //log the packet being received in Diagnostic.
+            SNPService.DiagnosticOut("EMPIndexPacketReceived!", 2);                             //log the packet being received in Diagnostic.
             try                                                                                 //try loop in case command fails.
             {
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
@@ -75,7 +73,7 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + " )");                                     //cap of the key section
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");                    //append value section to the command string
                 string SQLString = sqlStringBuilder.ToString();                                 //convert vuilder to string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -125,7 +123,7 @@ namespace SNPService
                             }
                         }
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
             }
@@ -133,9 +131,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection broke
                 {
-                    Controller.ReastablishSQL(IndexPacket, message);                        //reastablish it
+                    SNPService.ReastablishSQL(IndexPacket, message);                        //reastablish it
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);                                 //so if you could log this that would be greaaaaaaat
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //so if you could log this that would be greaaaaaaat
             }
         }
 
@@ -177,7 +175,7 @@ namespace SNPService
                 sqlStringBuilder.Append(keySection + " )");                                 //and append/capoff the strings
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");
                 SQLString = sqlStringBuilder.ToString();                                    //convert to string
-                using (SqlConnection connection = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -219,7 +217,7 @@ namespace SNPService
                             }
                         }
                         int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                        Controller.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
                     }
                 }
             }
@@ -227,9 +225,9 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
                 {
-                    Controller.ReastablishSQL(SQLEMPWarningPacket, message);
+                    SNPService.ReastablishSQL(SQLEMPWarningPacket, message);
                 }
-                Controller.DiagnosticOut(ex.ToString(), 1);
+                SNPService.DiagnosticOut(ex.ToString(), 1);
             }
         }
 

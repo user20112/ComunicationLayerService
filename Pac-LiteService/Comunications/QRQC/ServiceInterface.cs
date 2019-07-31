@@ -10,16 +10,14 @@ namespace SNPService.Comunications.QRQC
     public class SynchronousSocketClient
     {
         private static bool testConnection = false;
-        private static SNPService Controller;
 
-        public SynchronousSocketClient(Instructions i, SNPService controller)
+        public SynchronousSocketClient(Instructions i)
         {
             testConnection = false;
             string serializedObject;
             JavaScriptSerializer jss = new JavaScriptSerializer();
             serializedObject = jss.Serialize(i);
             StartClient(serializedObject);
-            Controller = controller;
         }
 
         public SynchronousSocketClient(Instructions i, bool test) //only for testing the connection (crude)
@@ -84,12 +82,12 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
-                    Controller.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
                 }
             }
             catch (Exception ex)
             {
-                Controller.DiagnosticOut(ex.ToString(), 1);
+                SNPService.DiagnosticOut(ex.ToString(), 1);
             }
         }
     }

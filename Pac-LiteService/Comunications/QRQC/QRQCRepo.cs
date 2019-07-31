@@ -7,12 +7,10 @@ namespace SNPService.Comunications.QRQC
     internal class Repo
     {
         public Line line;                       // the line we are talking about
-        private SNPService Controller;
 
-        public Repo(Line l, SNPService controller)
+        public Repo(Line l)
         {
             line = l;
-            Controller = controller;
         }
 
         public string GetProductFamilyId(string ProductName)
@@ -50,7 +48,7 @@ namespace SNPService.Comunications.QRQC
             string id = "";
             string dbTable = ConfigurationManager.AppSettings["QRQC_ProductNameId_view"];
             string query = "SELECT ProductId FROM " + dbTable + " WHERE ProductName='" + ProductName + "'";
-            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
                 con.Open();
                 try
@@ -64,7 +62,7 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
-                    Controller.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
                 }
             }
 
@@ -79,7 +77,7 @@ namespace SNPService.Comunications.QRQC
 
             string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
 
-            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
                 con.Open();
                 try
@@ -120,7 +118,7 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
-                    Controller.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
                 }
             }
 
@@ -135,7 +133,7 @@ namespace SNPService.Comunications.QRQC
 
             string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
 
-            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
                 con.Open();
                 try
@@ -176,7 +174,7 @@ namespace SNPService.Comunications.QRQC
                 }
                 catch (Exception ex)
                 {
-                    Controller.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
                 }
             }
 
@@ -187,7 +185,7 @@ namespace SNPService.Comunications.QRQC
         {
             string resourceId = "";
             string sql = "SELECT ResourceId FROM [QRQC].[dbo].[CAMSTAR_Resources] WHERE ResourceName='" + ResourceName + "'";
-            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
                 con.Open();
                 SqlCommand command = new SqlCommand(sql, con);
