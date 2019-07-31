@@ -84,8 +84,6 @@
     <Compile Include="Comunications\Disposable.cs" />
     <Compile Include="Comunications\QRQC\Instructions.cs" />
     <Compile Include="Comunications\QRQC\Line.cs" />
-    <Compile Include="Comunications\QRQC\QRQCRepo.cs" />
-    <Compile Include="Comunications\QRQC\ServiceInterface.cs" />
     <Compile Include="Comunications\QRQC\StatusClass.cs" />
     <Compile Include="Comunications\TopicPublisher.cs" />
     <Compile Include="Comunications\TopicSubscriber.cs" />

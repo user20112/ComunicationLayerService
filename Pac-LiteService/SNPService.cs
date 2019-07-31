@@ -1,5 +1,4 @@
-﻿using Camstar.Utility;
-using SNPService.Comunications;
+﻿using SNPService.Comunications;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -8,7 +7,6 @@ using System.IO;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace SNPService
 {
@@ -36,7 +34,7 @@ namespace SNPService
             DiagnosticOut("Stopped", 3);                                                        // report making it through stoping
         }
 
-        public static void DiagnosticOut(string message, int LoggingLevel)                             //report status mesages to a file
+        public static void DiagnosticOut(string message, int LoggingLevel)                      //report status mesages to a file
         {
             try
             {
@@ -61,7 +59,7 @@ namespace SNPService
                 {
                     using (StreamWriter DiagnosticWriter = File.AppendText(ConfigurationManager.AppSettings["DiagnosticFile"]))// @"C:\Users\d.paddock\Desktop\Diagnostic.csv")) defualt
                     {
-                        DiagnosticWriter.WriteLine(ex.ToString());                          //output it to file
+                        DiagnosticWriter.WriteLine(ex.ToString());                              //output it to file
                     }
                 }
                 catch (Exception Ex)//sadly giveup
@@ -74,9 +72,9 @@ namespace SNPService
 
         #region Variable Section
 
-        public static int LogggingLevel;                                                               //what logging level the service has selected
-        public static bool Listening;                                                                  //is the service listening to non control packets
-        public static bool Sending;                                                                    //is the service sending packets out to the real world
+        public static int LogggingLevel;                                                        //what logging level the service has selected
+        public static bool Listening;                                                           //is the service listening to non control packets
+        public static bool Sending;                                                             //is the service sending packets out to the real world
 
         public delegate void FunctionThatFailed(string message);                                //Delegate for the function that failed to be passed to restablish connection. gets called after connection is reastablished
 
@@ -88,18 +86,18 @@ namespace SNPService
         private SNPPackets SNPPackets;                                                          //collection of all snp packets and functions
         private ControlPackets ControlPackets;                                                  //collection of all Control packets and function
 
-        private string SubTopicName;                                            //Topic the Main Subscriber is subbed to
+        private string SubTopicName;                                                            //Topic the Main Subscriber is subbed to
         private string Broker;                                                                  //IP of the broker we are connecting to
         private string ClientID;                                                                //Client ID for the SNP Service
         private string ConsumerID;                                                              //Consumer ID for the SNP service
-        private static string ENG_DBDataSource;                                                        //Engineering Database Ip Address
-        private static string ENG_DBUserID;                                                            //Engineering databse user used to comunicate
-        private static string ENG_DBPassword;                                                          //Engineering databse password used to comunicate
-        private static string ENG_DBInitialCatalog;                                                    //Engineering Database that we are talking to
+        private static string ENG_DBDataSource;                                                 //Engineering Database Ip Address
+        private static string ENG_DBUserID;                                                     //Engineering databse user used to comunicate
+        private static string ENG_DBPassword;                                                   //Engineering databse password used to comunicate
+        private static string ENG_DBInitialCatalog;                                             //Engineering Database that we are talking to
 
         private List<Disposable> ThingsToDispose;                                               //whenever you make something that inherits from IDisposable and needs to be disposed add to this. iterates through at end disposing of items.
 
-        private static bool fixingconnection = false;                                                  //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
+        private static bool fixingconnection = false;                                           //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
 
         #endregion Variable Section
 
@@ -206,7 +204,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                             //catch exceptions
             {
-                DiagnosticOut(ex.ToString(), 1);                                            //log it
+                DiagnosticOut(ex.ToString(), 1);                                             //log it
             }
         }
 
@@ -232,7 +230,7 @@ namespace SNPService
             //catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }
             try
             {
-                DiagnosticOut("Connecting EMP Publisher", 2);                           //connect the EMp Publisher
+                DiagnosticOut("Connecting EMP Publisher", 2);                               //connect the EMp Publisher
                 EMPPackets.Publisher = new TopicPublisher(EMPPackets.TopicName, Broker);
                 ThingsToDispose.Add(new Disposable(nameof(EMPPackets.Publisher), EMPPackets.Publisher));//add it to things to dispose
             }
@@ -248,26 +246,26 @@ namespace SNPService
             {
                 // Build connection string
                 DiagnosticOut("Connecting SQL Database", 2);
-                ENGDBConnection = new SqlConnectionStringBuilder();  //create a string builder to connect to the database
+                ENGDBConnection = new SqlConnectionStringBuilder();                             //create a string builder to connect to the database
                 ENGDBConnection.DataSource = ENG_DBDataSource;                                  //give it the IP
                 ENGDBConnection.UserID = ENG_DBUserID;                                          //and the username
                 ENGDBConnection.Password = ENG_DBPassword;                                      //password
                 ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;                          //and finally the starting database
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                       //logit
+            catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                           //logit
         }
 
         /// <summary>
         /// Collection of TCP Connection setup
         /// </summary>
-        private void TCPConnections()// no TCP Connections anymore :/ still able though!
+        private void TCPConnections()                                                           // no TCP Connections anymore :/ still able though!
         {
         }
 
         /// <summary>
         /// Collection of UDP Connection setup
         /// </summary>
-        private void UDPConnections()//no udp connections anymore :/ still able though!
+        private void UDPConnections()                                                           //no udp connections anymore :/ still able though!
         {
             //DiagnosticOut("Connecting to MDE", 2);
             //try
@@ -290,11 +288,11 @@ namespace SNPService
             //catch
             //{
             //}
-            foreach (Disposable disposable in ThingsToDispose)                          //foreach thing to dispose
+            foreach (Disposable disposable in ThingsToDispose)                              //foreach thing to dispose
             {
                 try
                 {
-                    disposable.Dispose();                                               //try to dispose it ( they will be regenerated on start
+                    disposable.Dispose();                                                   //try to dispose it ( they will be regenerated on start
                     DiagnosticOut(disposable.Name + "Has been Disconected and Disposed", 2);//logit
                 }
                 catch (Exception ex) { DiagnosticOut(disposable.Name + ex.ToString(), 1); }  //logit o.o
@@ -317,7 +315,7 @@ namespace SNPService
             LogggingLevel = Convert.ToInt32(ConfigurationManager.AppSettings["LogggingLevel"]);
             Listening = Convert.ToInt32(ConfigurationManager.AppSettings["Listening"]) == 1;
             Sending = Convert.ToInt32(ConfigurationManager.AppSettings["Sending"]) == 1;
-            EMPPackets = new EMPPackets();                                              //generate the packet classes
+            EMPPackets = new EMPPackets();                                                  //generate the packet classes
             SNPPackets = new SNPPackets();
             ControlPackets = new ControlPackets();
             try
@@ -327,7 +325,6 @@ namespace SNPService
                 Task.Run(() => SQLConnections());                                           //open alll SQL Connections
                 Task.Run(() => TCPConnections());                                           //open all TCPConnections
                 Task.Run(() => UDPConnections());                                           //open all UDP Connections
-                //Task.Run(() => CamstarConnect(ConfigurationManager.AppSettings["CamstarUsername"], ConfigurationManager.AppSettings["CamstarPassword"]));//open Camstar Connection
             }
             catch (Exception ex)                                                            //catch exceptions
             {
@@ -363,43 +360,6 @@ namespace SNPService
                 fixingconnection = false;                                               //unlock it
             }
             functionThatFailed(message);                                                //recall the function that failed
-        }
-
-        /// <summary>
-        /// Connects to Camstar with the username and password provided.
-        /// </summary>
-        private void CamstarConnect(string UserName, string Password)
-        {
-            DiagnosticOut("Connecting Camstar", 2);
-            string DataReceived;                                                        //stores data camstar sends back
-            try
-            {
-                string PacketString = "<__InSite __encryption=\"2\" __version=\"1.1\"><__session><__connect><user><__name>" + UserName + "</__name></user><password __encrypted=\"no\">" + Password + "</password></__connect></__session></__InSite>";
-                var connection = new ServerConnection();                                //open a connection
-                var connected = connection.Connect(ConfigurationManager.AppSettings["CamstarIP"], Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"])); // try connecting
-                if (!connected) return;                                                 // return nothing if cant connect
-                connection.Send(PacketString.ToString());                               // send data
-                connection.Receive(out var result);                                     // reviece message from server, and store into variable
-                connection.Disconnect();                                                // Close connection
-                try
-                {
-                    DataReceived = XDocument.Parse(result).ToString();                  // format recieved message into xml
-                }
-                catch
-                {
-                    DataReceived = result;                                              //if formatting fails jsut return unformatted
-                }
-                DiagnosticOut(DataReceived, 5);                                         //log it damn it
-            }
-            catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                   //catch all errors and log it. (love you logger)
-        }
-
-        public void ChangeConfig(string key, string value)
-        {
-            System.Configuration.Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);//get a live version of the config
-            config.AppSettings.Settings[key].Value = value;                             //change the config
-            config.Save(ConfigurationSaveMode.Modified);                                //save the config
-            ConfigurationManager.RefreshSection("appSettings");                         //refresh the config
         }
 
         #endregion Connections/Resources/Misc

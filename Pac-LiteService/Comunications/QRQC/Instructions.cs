@@ -13,19 +13,19 @@ namespace SNPService.Comunications.QRQC
     [Serializable]
     public struct Instructions
     {
-        private bool Recalculate; //ask server to recalculate output also
+        private bool Recalculate;   //ask server to recalculate output also
         private DateTime time;
-        private Line L;           //the line you are requesting to be recalculated
-        private string DateTimeStr;//string for the Date Time
-        private string customMsg;
+        private Line L;             //the line you are requesting to be recalculated
+        private string DateTimeStr; //string for the Date Time
+        private string customMsg;   //unused but must match server side
 
         public Instructions(bool recalculate, DateTime datetime, Line line)
         {
-            this.Recalculate = recalculate;
-            this.time = datetime;
-            this.L = line;
-            this.DateTimeStr = datetime.ToString();
-            this.customMsg = "NORMAL";
+            Recalculate = recalculate;
+            time = datetime;
+            L = line;
+            DateTimeStr = datetime.ToString();
+            customMsg = "NORMAL";
         }
     }
 }

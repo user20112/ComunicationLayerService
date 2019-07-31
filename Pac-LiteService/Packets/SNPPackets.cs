@@ -8,9 +8,12 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using System.Xml.Linq;
 
 namespace SNPService
@@ -19,7 +22,6 @@ namespace SNPService
     {
         #region Variable Section
 
-        public Repo QRQCRepo;                                               // Contains either the service or form that owns this class.
         //public TopicPublisher Publisher;                                                    // publishes to the Pac-Light Outbound topic
 
         //public UdpClient MDEClient;                                                         // depreciated comunication to MDE over udp
@@ -273,7 +275,7 @@ namespace SNPService
             SNPService.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
             Task.Run(() => SQLDownTimePacket(message));                                     //Save data to SQL, return value doesnt matter
             Task.Run(() => CamstarDowntimePacket(message));                                 //send data to Camstar, return value doesnt matter
-            Task.Run(() => QRQCDownTimePacket(message));                                    //Update QRQC Application for the machine 
+            Task.Run(() => QRQCDownTimePacket(message));                                    //Update QRQC Application for the machine
         }
 
         /// <summary>
@@ -472,16 +474,16 @@ namespace SNPService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobjectif (Convert.ToInt32(receivedPacket["Status"]))
                 if (!(Convert.ToInt32(receivedPacket["StatusCode"]) == 0))
                 {
-                    QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()));
+                    Line line = LoadResources(receivedPacket["Machine"].ToString());            //generate a line from the machine name
                     StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
                     string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
                     sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
                     sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
                     string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
-                    string ResourceId = QRQCRepo.GerResourceID(receivedPacket["Machine"].ToString());
-                    string ProductID = QRQCRepo.GetProductId(receivedPacket["NAED"].ToString());
-                    int Thru = QRQCRepo.GetOutTheo(receivedPacket["NAED"].ToString());
-                    int Goal = QRQCRepo.GetOutGoal(receivedPacket["NAED"].ToString());
+                    string ResourceId = GerResourceID(receivedPacket["Machine"].ToString());
+                    string ProductID = GetProductId(receivedPacket["NAED"].ToString());
+                    int Thru = GetOutTheo(receivedPacket["NAED"].ToString(), line);
+                    int Goal = GetOutGoal(receivedPacket["NAED"].ToString(), line);
                     using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                     {
                         connection.Open();                                                          //open the connection
@@ -510,7 +512,7 @@ namespace SNPService
                             int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
                             SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                         }
-                        new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line));
+                        UpdateQRQC(new Instructions(false, HolderTime, line));
                         SNPService.DiagnosticOut("Changed QRQC Status", 2);
                     }
                 }
@@ -885,6 +887,218 @@ namespace SNPService
 
         public void DoNothing(string Message)
         {
+        }
+
+        public static void UpdateQRQC(Instructions i)
+        {
+            try
+            {
+                JavaScriptSerializer jss = new JavaScriptSerializer();
+                string serializedObject = jss.Serialize(i);                                         //serialize the object for trasmission
+                string SERVERIP = ConfigurationManager.AppSettings["QRQC_Service_SERVERIP"];        //grab the server ip from config
+                IPAddress ipAddress = IPAddress.Parse(SERVERIP);                                    //parse the ip
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, 61752);                         //
+                Socket sender = new Socket(ipAddress.AddressFamily,                                 // Create a TCP/IP  socket.
+                    SocketType.Stream, ProtocolType.Tcp);                                           //
+                sender.Connect(remoteEP);                                                           // Connect the socket to the remote endpoint.
+                byte[] msg = Encoding.ASCII.GetBytes(serializedObject + "<EOF>");                   // Encode the data string into a byte array.
+                sender.Send(msg);                                                                   //send the data and dispose of and close the conection
+                sender.Shutdown(SocketShutdown.Both);
+                sender.Close();
+            }
+            catch (Exception ex)
+            {
+                SNPService.DiagnosticOut(ex.ToString(), 1);
+            }
+        }
+
+        public string GetProductFamilyId(string ProductName)
+        {
+            string ProductFamilyId = "";        //initialize as empty
+            string productTable = ConfigurationManager.AppSettings["camProductTable"];//this is the table that stores all product information
+            string productBaseTable = ConfigurationManager.AppSettings["camProductBaseTable"]; //this is the table for the bases
+            string query = "SELECT ProductFamilyId FROM " + productTable + " WHERE ProductBaseId=(SELECT ProductBaseId FROM " + productBaseTable + " WHERE ProductName='" + ProductName + "')";//select the product id where the product name is correct
+            using (SqlConnection con = new SqlConnection())
+            {
+                con.ConnectionString = ConfigurationManager.AppSettings["DBCamstarConnectionString"] + "User Id= camstaruser; Password= c@mst@rus3r;";
+                con.Open();
+                try
+                {
+                    SqlCommand command = new SqlCommand(query, con);//submit command
+                    SqlDataReader reader = command.ExecuteReader();//read the values back
+                    if (reader.Read())
+                    {
+                        if (!reader.IsDBNull(0)) //if not null
+                        {
+                            ProductFamilyId = reader.GetString(0);
+                        }
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return ProductFamilyId;
+        } //Gets ProductFamilyId from ProductName
+
+        public string GetProductId(string ProductName)
+        {
+            string id = "";
+            string dbTable = ConfigurationManager.AppSettings["QRQC_ProductNameId_view"];
+            string query = "SELECT ProductId FROM " + dbTable + " WHERE ProductName='" + ProductName + "'";
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+            {
+                con.Open();
+                try
+                {
+                    SqlCommand command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        id = reader.GetString(0);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                }
+            }
+
+            return id;
+        }
+
+        public int GetOutGoal(string ProductName, Line Line) //gets goal of product/family/line in that order of importance
+        {
+            double t = 0; //we'll call this a timespan for now
+
+            string speedTable = ConfigurationManager.AppSettings["speedTable"];
+
+            string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
+
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+            {
+                con.Open();
+                try
+                {
+                    SqlCommand command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        t = reader.GetDouble(3);
+                    }
+                    else
+                    {
+                        reader.Close();
+                        query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
+                        SqlCommand command2 = new SqlCommand(query, con);
+                        SqlDataReader reader2 = command2.ExecuteReader();
+                        if (reader2.HasRows)
+                        {
+                            reader2.Read();
+                            t = reader2.GetDouble(3);
+                        }
+                        else
+                        {
+                            reader2.Close();
+                            query = "SELECT * FROM " + speedTable + "WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId IS NULL AND ProductId IS NULL";
+                            SqlCommand command3 = new SqlCommand(query, con);
+                            SqlDataReader reader3 = command3.ExecuteReader();
+                            if (reader3.HasRows)
+                            {
+                                reader3.Read();
+                                t = reader3.GetDouble(3);
+                                reader3.Close();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                }
+            }
+
+            return Convert.ToInt32(t);
+        }
+
+        public int GetOutTheo(string ProductName, Line Line) //gets hour theoretical/thru of product/family/line in that order of importance
+        {
+            double t = 0; //we'll call this a timespan for now
+
+            string speedTable = ConfigurationManager.AppSettings["speedTable"];
+
+            string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
+
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+            {
+                con.Open();
+                try
+                {
+                    SqlCommand command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        t = reader.GetDouble(4);
+                    }
+                    else
+                    {
+                        reader.Close();
+                        query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
+                        SqlCommand command2 = new SqlCommand(query, con);
+                        SqlDataReader reader2 = command2.ExecuteReader();
+                        if (reader2.HasRows)
+                        {
+                            reader2.Read();
+                            t = reader2.GetDouble(4);
+                        }
+                        else
+                        {
+                            reader2.Close();
+                            query = "SELECT * FROM " + speedTable + "WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId IS NULL AND ProductId IS NULL";
+                            SqlCommand command3 = new SqlCommand(query, con);
+                            SqlDataReader reader3 = command3.ExecuteReader();
+                            if (reader3.HasRows)
+                            {
+                                reader3.Read();
+                                t = reader3.GetDouble(4);
+                                reader3.Close();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                }
+            }
+
+            return Convert.ToInt32(t);
+        }
+
+        public string GerResourceID(string ResourceName)
+        {
+            string resourceId = "";
+            string sql = "SELECT ResourceId FROM [QRQC].[dbo].[CAMSTAR_Resources] WHERE ResourceName='" + ResourceName + "'";
+            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand(sql, con);
+                SqlDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    if (!reader.IsDBNull(0))
+                    {
+                        resourceId = (string)reader[0];
+                    }
+                }
+                reader.Close();
+            }
+            return resourceId;
         }
 
         #endregion Connections/Resources/Misc

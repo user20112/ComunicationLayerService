@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SNPService.Comunications.QRQC
+﻿namespace SNPService.Comunications.QRQC
 {
-    public class StatusClass //currently multipurpose. used for getting status and detail
+    public class StatusClass            //Used for reporting to QRQC
     {
-        public int StatusID;
-        public string Product;
-        public string Desc { get; set; }
+        public int StatusID;            //Current Status ID
+        public string Product;          //which product the line is running
+        public string Desc { get; set; }//must match server side
         public bool OEE;
         public int Goal;
 
@@ -21,7 +15,7 @@ namespace SNPService.Comunications.QRQC
             OEE = oee;
         }
 
-        public StatusClass()
+        public StatusClass()            //defualt values
         {
             Desc = "error";
             OEE = false;
