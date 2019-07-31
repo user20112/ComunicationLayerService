@@ -23,17 +23,13 @@ namespace SNPService
         #region Variable Section
 
         //public TopicPublisher Publisher;                                                    // publishes to the Pac-Light Outbound topic
-
         //public UdpClient MDEClient;                                                         // depreciated comunication to MDE over udp
         //public string TopicName = "SNP.Outbound";                                           // Test Output topic
         private string CamstarUsername;                                                     // username used to comunicate with camstar
-
         private string CamstarPassword;                                                     // password used to ocmunicate with camstar
         private string CamstarIP;                                                           // IP of the Camstar System you are talking to
-
         //private string MDEIP;                                                               // currently my ip for MDEing. once it is known to be working i have to get this ip from gerry.
         private int CamstarPort;                                                            // Port of the Camstar system you are talking to
-
         //private int MDEClientPort;                                                          // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                              // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
 
@@ -42,8 +38,8 @@ namespace SNPService
             CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];          // pull Camstar username
             CamstarPassword = ConfigurationManager.AppSettings["CamstarPassword"];          //and camstar password
             CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];                      //and camstar ip
-            //MDEIP = ConfigurationManager.AppSettings["MDEIP"];                              //and MDE Ip deprecieted as MDE is no longer used
             CamstarPort = Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"]); //and Camstar Port
+            //MDEIP = ConfigurationManager.AppSettings["MDEIP"];                              //and MDE Ip deprecieted as MDE is no longer used
             //MDEClientPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEClientPort"]);//and MDE Ports deprecieted as mde is no longer used
             //MDEOutPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEOutPort"]); //from app.config
         }
@@ -51,7 +47,6 @@ namespace SNPService
         #endregion Variable Section
 
         #region Packet Section
-
         /// <summary>
         /// Called whenever a new machine is detected
         /// Creates all required databases and entries for the machine detaield in the packet.
