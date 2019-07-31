@@ -6,14 +6,12 @@ namespace SNPService.Comunications.QRQC
 {
     internal class Repo
     {
-        public string connectionString;         //used for connecting to SQL
         public Line line;                       // the line we are talking about
         private SNPService Controller;
 
         public Repo(Line l, SNPService controller)
         {
             line = l;
-            connectionString = ConfigurationManager.AppSettings["DBConnectionStringA"] + "User Id= camstaruser; Password= c@mst@rus3r;";
             Controller = controller;
         }
 
@@ -52,10 +50,8 @@ namespace SNPService.Comunications.QRQC
             string id = "";
             string dbTable = ConfigurationManager.AppSettings["QRQC_ProductNameId_view"];
             string query = "SELECT ProductId FROM " + dbTable + " WHERE ProductName='" + ProductName + "'";
-
-            using (SqlConnection con = new SqlConnection())
+            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
             {
-                con.ConnectionString = connectionString;
                 con.Open();
                 try
                 {
@@ -83,9 +79,8 @@ namespace SNPService.Comunications.QRQC
 
             string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
 
-            using (SqlConnection con = new SqlConnection())
+            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
             {
-                con.ConnectionString = connectionString;
                 con.Open();
                 try
                 {
@@ -140,9 +135,8 @@ namespace SNPService.Comunications.QRQC
 
             string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
 
-            using (SqlConnection con = new SqlConnection())
+            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
             {
-                con.ConnectionString = connectionString;
                 con.Open();
                 try
                 {
@@ -193,9 +187,8 @@ namespace SNPService.Comunications.QRQC
         {
             string resourceId = "";
             string sql = "SELECT ResourceId FROM [QRQC].[dbo].[CAMSTAR_Resources] WHERE ResourceName='" + ResourceName + "'";
-            using (SqlConnection con = new SqlConnection())
+            using (SqlConnection con = new SqlConnection(Controller.ENGDBConnection.ConnectionString))
             {
-                con.ConnectionString = connectionString;
                 con.Open();
                 SqlCommand command = new SqlCommand(sql, con);
                 SqlDataReader reader = command.ExecuteReader();
