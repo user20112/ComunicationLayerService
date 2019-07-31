@@ -109,7 +109,7 @@ namespace SNPService
                     sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
                     if (Missing)                                                                //if we dont have a database yet
                     {
-                        sqlStringBuilder.Append(" CREATE DATABASE [" + Line + "];");            //create one
+                        sqlStringBuilder.Append(" CREATE DATABASE [EngDb-" + Line + "];");            //create one
                         SQLString = sqlStringBuilder.ToString();                                //Convert the builder to the string
                         using (SqlCommand command = new SqlCommand(SQLString, connection))
                         {                                                                           //Commmand Time!
@@ -118,7 +118,7 @@ namespace SNPService
                         }
                     }
                     sqlStringBuilder = new StringBuilder();
-                    sqlStringBuilder.Append(" USE [" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
+                    sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
                     sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [HeadNumber] [int] NOT NULL," + Errors);
                     sqlStringBuilder.Append(" ) ON [PRIMARY] ");
@@ -178,7 +178,7 @@ namespace SNPService
                         SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                     sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
-                    sqlStringBuilder.Append(" USE [" + Line + "] ");                             //load alter table command
+                    sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                             //load alter table command
                     sqlStringBuilder.Append("Alter Table [" + receivedPacket["Machine"] + "ShortTimeStatistics] ADD ");
                     string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
                     string[] ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
@@ -233,7 +233,7 @@ namespace SNPService
                         SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                     sqlStringBuilder = new StringBuilder();                                     //clear string builder
-                    sqlStringBuilder.Append(" USE [" + Line + "] ");                            //build next section
+                    sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //build next section
                     sqlStringBuilder.Append("drop table [" + machineName + "];");
                     sqlStringBuilder.Append("drop table [" + machineName + "DownTimes];");
                     sqlStringBuilder.Append("drop table [" + machineName + "ShortTimeStatistics];");
@@ -271,8 +271,9 @@ namespace SNPService
         public void DowntimePacket(string message)
         {
             SNPService.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
-            Task.Run(() => SQLDownTimePacket(message)); //Save data to SQL, return value doesnt matter
+            Task.Run(() => SQLDownTimePacket(message));                                     //Save data to SQL, return value doesnt matter
             Task.Run(() => CamstarDowntimePacket(message));                                 //send data to Camstar, return value doesnt matter
+            Task.Run(() => QRQCDownTimePacket(message));                                    //Update QRQC Application for the machine 
         }
 
         /// <summary>
@@ -295,8 +296,8 @@ namespace SNPService
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//Convert json to object
                 StringBuilder sqlStringBuilder = new StringBuilder();
-                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
-                sqlStringBuilder.Append(" USE [" + temp[1] + "] ");                            //select database
+                string[] MachineAndLine = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [EngDb-" + MachineAndLine[1] + "] ");                            //select database
                 sqlStringBuilder.Append("INSERT INTO [" + receivedPacket["Machine"].ToString() + "] (");  //start loading the command into the string
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";                                                     //stores the key section of the SQL
@@ -312,7 +313,7 @@ namespace SNPService
                 keySection += "Timestamp, ";                                                     //Make a Time key since it is generated server side
                 valueSection += "@Timestamp, ";                                                  //and value Reference to be replaced later
                 keySection += "MachineID ";                                                 //Add a machineID section
-                valueSection += temp[0] + " ";                                               //and value
+                valueSection += MachineAndLine[0] + " ";                                               //and value
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it of
                 sqlStringBuilder.Append("Values ( " + valueSection + ");");                 //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert Builder to string
@@ -399,8 +400,8 @@ namespace SNPService
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobject
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
-                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
-                sqlStringBuilder.Append(" USE [" + temp[1] + "] ");                            //select database
+                string[] MachineAndLine = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [EngDb-" + MachineAndLine[1] + "] ");                            //select database
                 sqlStringBuilder.Append("INSERT INTO [" + receivedPacket["Machine"] + "DownTimes] (");//start loading the SQL Command
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";                                                     //contains the key section of the sql
@@ -414,7 +415,7 @@ namespace SNPService
                     }
                 }
                 keySection += "MachineID , Timestamp ";                                          //add a machine ID and time key
-                valueSection += temp[0] + " ,@Timestamp ";                                        //add a value section as well
+                valueSection += MachineAndLine[0] + " ,@Timestamp ";                                        //add a value section as well
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values (" + valueSection + ");");                  //append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
@@ -451,7 +452,6 @@ namespace SNPService
                         SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                     }
                 }
-                QRQCDownTimePacket(message);
             }
             catch (Exception ex)                                                            //catch exceptions
             {
@@ -470,46 +470,49 @@ namespace SNPService
             {
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert json to jobjectif (Convert.ToInt32(receivedPacket["Status"]))
-                QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()));
-                StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
-                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
-                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
-                sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
-                string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
-                string ResourceId = QRQCRepo.GerResourceID(receivedPacket["Machine"].ToString());
-                string ProductID = QRQCRepo.GetProductId(receivedPacket["NAED"].ToString());
-                int Thru = QRQCRepo.GetOutTheo(receivedPacket["NAED"].ToString());
-                int Goal = QRQCRepo.GetOutGoal(receivedPacket["NAED"].ToString());
-                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+                if (!(Convert.ToInt32(receivedPacket["StatusCode"]) == 0))
                 {
-                    connection.Open();                                                          //open the connection
-                    using (SqlCommand command = new SqlCommand(SQLString, connection))
+                    QRQCRepo = new Repo(LoadResources(receivedPacket["Machine"].ToString()));
+                    StringBuilder sqlStringBuilder = new StringBuilder();                       //create a string builder to make the sql string
+                    string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                    sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
+                    sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
+                    string SQLString = sqlStringBuilder.ToString();                             //convert Builder to string
+                    string ResourceId = QRQCRepo.GerResourceID(receivedPacket["Machine"].ToString());
+                    string ProductID = QRQCRepo.GetProductId(receivedPacket["NAED"].ToString());
+                    int Thru = QRQCRepo.GetOutTheo(receivedPacket["NAED"].ToString());
+                    int Goal = QRQCRepo.GetOutGoal(receivedPacket["NAED"].ToString());
+                    using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                     {
-                        HolderTime = DateTime.Now;                                                  //Command Time!
-                        command.Parameters.AddWithValue("@StatusBegin", HolderTime);                //add a timestamp
-                        command.Parameters.AddWithValue("@ResourceID", ResourceId);                 //add rest of values
-                        switch (Convert.ToInt32(receivedPacket["StatusCode"]))                      //convert status id to QRQC Status ID
+                        connection.Open();                                                          //open the connection
+                        using (SqlCommand command = new SqlCommand(SQLString, connection))
                         {
-                            case 1://scheduled
-                                command.Parameters.AddWithValue("@StatusID", 2);
-                                break;
+                            HolderTime = DateTime.Now;                                                  //Command Time!
+                            command.Parameters.AddWithValue("@StatusBegin", HolderTime);                //add a timestamp
+                            command.Parameters.AddWithValue("@ResourceID", ResourceId);                 //add rest of values
+                            switch (Convert.ToInt32(receivedPacket["StatusCode"]))                      //convert status id to QRQC Status ID
+                            {
+                                case 1://scheduled
+                                    command.Parameters.AddWithValue("@StatusID", 2);
+                                    break;
 
-                            case 2://Running
-                                command.Parameters.AddWithValue("@StatusID", 0);
-                                break;
+                                case 2://Running
+                                    command.Parameters.AddWithValue("@StatusID", 0);
+                                    break;
 
-                            case 3://PM
-                                command.Parameters.AddWithValue("@StatusID", 1);
-                                break;
+                                case 3://PM
+                                    command.Parameters.AddWithValue("@StatusID", 1);
+                                    break;
+                            }
+                            command.Parameters.AddWithValue("@ProductID", ProductID);
+                            command.Parameters.AddWithValue("@Thru", Thru);
+                            command.Parameters.AddWithValue("@Goal", Goal);
+                            int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
+                            SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
                         }
-                        command.Parameters.AddWithValue("@ProductID", ProductID);
-                        command.Parameters.AddWithValue("@Thru", Thru);
-                        command.Parameters.AddWithValue("@Goal", Goal);
-                        int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line));
+                        SNPService.DiagnosticOut("Changed QRQC Status", 2);
                     }
-                    new SynchronousSocketClient(new Instructions(false, HolderTime, QRQCRepo.line));
-                    SNPService.DiagnosticOut("Changed QRQC Status", 2);
                 }
             }
             catch (Exception ex)                                                            //catch exceptions
@@ -575,8 +578,8 @@ namespace SNPService
                 string jsonString = message.Substring(7, message.Length - 7);               //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;//convert it to a jobject
                 StringBuilder sqlStringBuilder = new StringBuilder();                       //string builder to create the sql string
-                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
-                sqlStringBuilder.Append(" USE [" + temp[1] + "] ");                            //select database
+                string[] MachineAndLine = GetMachineIDAndLine(receivedPacket["Machine"].ToString());
+                sqlStringBuilder.Append(" USE [EngDb-" + MachineAndLine[1] + "] ");                            //select database
                 sqlStringBuilder.Append("INSERT INTO [" + receivedPacket["Machine"].ToString() + "ShortTimeStatistics] (");//start building SQL string
                 List<string> keys = receivedPacket.Properties().Select(p => p.Name).ToList();//gets list of all keys in json object
                 string keySection = "";                                                     //stores the key section of the sql
@@ -590,7 +593,7 @@ namespace SNPService
                     }
                 }
                 keySection += "[MachineID], [Timestamp] ";                                  //add a machineIDsection and timestamp
-                valueSection += temp[0] + ", @Timestamp ";                                  //add to value section to
+                valueSection += MachineAndLine[0] + ", @Timestamp ";                                  //add to value section to
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values ( " + valueSection + ");");//append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
@@ -791,7 +794,7 @@ namespace SNPService
                 using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
-                    using (SqlCommand command = new SqlCommand("SELECT name from sys.databases where name='" + Line + "'", connection))
+                    using (SqlCommand command = new SqlCommand("SELECT name from sys.databases where name='EngDb-" + Line + "'", connection))
                     {
                         using (IDataReader dr = command.ExecuteReader())
                         {
