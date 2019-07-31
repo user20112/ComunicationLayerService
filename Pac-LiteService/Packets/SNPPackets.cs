@@ -909,55 +909,67 @@ namespace SNPService
             }
             catch (Exception ex)
             {
-                SNPService.DiagnosticOut(ex.ToString(), 1);
+                SNPService.DiagnosticOut(ex.ToString(), 1);                                         //log it
             }
         }
 
+        /// <summary>
+        /// Converts Naed string to MDE/MDI ProductID string
+        /// </summary>
         public string GetProductFamilyId(string ProductName)
         {
-            string ProductFamilyId = "";        //initialize as empty
-            string productTable = ConfigurationManager.AppSettings["camProductTable"];//this is the table that stores all product information
-            string productBaseTable = ConfigurationManager.AppSettings["camProductBaseTable"]; //this is the table for the bases
+            string ProductFamilyId = "";                                                            //initialize as empty
+            string productTable = ConfigurationManager.AppSettings["camProductTable"];              //this is the table that stores all product information
+            string productBaseTable = ConfigurationManager.AppSettings["camProductBaseTable"];      //this is the table for the bases
             string query = "SELECT ProductFamilyId FROM " + productTable + " WHERE ProductBaseId=(SELECT ProductBaseId FROM " + productBaseTable + " WHERE ProductName='" + ProductName + "')";//select the product id where the product name is correct
-            using (SqlConnection con = new SqlConnection())
+            using (SqlConnection con = new SqlConnection())                                         //create the connection
             {
                 con.ConnectionString = ConfigurationManager.AppSettings["DBCamstarConnectionString"] + "User Id= camstaruser; Password= c@mst@rus3r;";
                 con.Open();
                 try
                 {
-                    SqlCommand command = new SqlCommand(query, con);//submit command
-                    SqlDataReader reader = command.ExecuteReader();//read the values back
-                    if (reader.Read())
+                    using (SqlCommand command = new SqlCommand(query, con))                                //submit command
                     {
-                        if (!reader.IsDBNull(0)) //if not null
+                        using (SqlDataReader reader = command.ExecuteReader())                               //read the values back
                         {
-                            ProductFamilyId = reader.GetString(0);
+                            if (reader.Read())
+                            {
+                                if (!reader.IsDBNull(0))                                                    //if not null
+                                {
+                                    ProductFamilyId = reader.GetString(0);                                  //this is the ID for the NAED
+                                }
+                            }
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    SNPService.DiagnosticOut(ex.ToString(), 1);
                 }
             }
-
-            return ProductFamilyId;
-        } //Gets ProductFamilyId from ProductName
+            return ProductFamilyId;                                                                 //were done!
+        }
 
         public string GetProductId(string ProductName)
         {
-            string id = "";
-            string dbTable = ConfigurationManager.AppSettings["QRQC_ProductNameId_view"];
-            string query = "SELECT ProductId FROM " + dbTable + " WHERE ProductName='" + ProductName + "'";
+            string id = "";                                                                             //initialize empty
+            string dbTable = ConfigurationManager.AppSettings["QRQC_ProductNameId_view"];               //grab table from app config
+            string query = "SELECT ProductId FROM " + dbTable + " WHERE ProductName='" + ProductName + "'"; //select the Product id where the name is the same
             using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
-                con.Open();
+                con.Open();                                                                                 //Make and open conection
                 try
                 {
-                    SqlCommand command = new SqlCommand(query, con);
-                    SqlDataReader reader = command.ExecuteReader();
-                    if (reader.Read())
+                    using (SqlCommand command = new SqlCommand(query, con))                                 //start
+
                     {
-                        id = reader.GetString(0);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                id = reader.GetString(0);
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -969,9 +981,9 @@ namespace SNPService
             return id;
         }
 
-        public int GetOutGoal(string ProductName, Line Line) //gets goal of product/family/line in that order of importance
+        public int GetOutGoal(string ProductName, Line Line)                                                //gets goal of product/family/line in that order of importance
         {
-            double t = 0; //we'll call this a timespan for now
+            double t = 0;                                                                                   //we'll call this a timespan for now
 
             string speedTable = ConfigurationManager.AppSettings["speedTable"];
 
@@ -982,40 +994,51 @@ namespace SNPService
                 con.Open();
                 try
                 {
-                    SqlCommand command = new SqlCommand(query, con);
-                    SqlDataReader reader = command.ExecuteReader();
-
-                    if (reader.HasRows)
+                    using (SqlCommand command = new SqlCommand(query, con))
                     {
-                        reader.Read();
-                        t = reader.GetDouble(3);
-                    }
-                    else
-                    {
-                        reader.Close();
-                        query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
-                        SqlCommand command2 = new SqlCommand(query, con);
-                        SqlDataReader reader2 = command2.ExecuteReader();
-                        if (reader2.HasRows)
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            reader2.Read();
-                            t = reader2.GetDouble(3);
-                        }
-                        else
-                        {
-                            reader2.Close();
-                            query = "SELECT * FROM " + speedTable + "WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId IS NULL AND ProductId IS NULL";
-                            SqlCommand command3 = new SqlCommand(query, con);
-                            SqlDataReader reader3 = command3.ExecuteReader();
-                            if (reader3.HasRows)
+                            if (reader.HasRows)
                             {
-                                reader3.Read();
-                                t = reader3.GetDouble(3);
-                                reader3.Close();
+                                reader.Read();
+                                t = reader.GetDouble(3);
+                            }
+                            else
+                            {
+                                reader.Close();
+                                query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
+                                using (SqlCommand command2 = new SqlCommand(query, con))
+                                {
+                                    using (SqlDataReader reader2 = command2.ExecuteReader())
+                                    {
+                                        if (reader2.HasRows)
+                                        {
+                                            reader2.Read();
+                                            t = reader2.GetDouble(3);
+                                        }
+                                        else
+                                        {
+                                            reader2.Close();
+                                            query = "SELECT * FROM " + speedTable + "WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId IS NULL AND ProductId IS NULL";
+                                            using (SqlCommand command3 = new SqlCommand(query, con))
+                                            {
+                                                using (SqlDataReader reader3 = command3.ExecuteReader())
+                                                {
+                                                    if (reader3.HasRows)
+                                                    {
+                                                        reader3.Read();
+                                                        t = reader3.GetDouble(3);
+                                                        reader3.Close();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             }
                         }
                     }
-                }
                 catch (Exception ex)
                 {
                     SNPService.DiagnosticOut(ex.ToString(), 1);
@@ -1027,47 +1050,54 @@ namespace SNPService
 
         public int GetOutTheo(string ProductName, Line Line) //gets hour theoretical/thru of product/family/line in that order of importance
         {
-            double t = 0; //we'll call this a timespan for now
-
+            double Theo = 0;
             string speedTable = ConfigurationManager.AppSettings["speedTable"];
-
             string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
-
             using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
                 con.Open();
                 try
                 {
-                    SqlCommand command = new SqlCommand(query, con);
-                    SqlDataReader reader = command.ExecuteReader();
-
-                    if (reader.HasRows)
+                    using (SqlCommand command = new SqlCommand(query, con))
                     {
-                        reader.Read();
-                        t = reader.GetDouble(4);
-                    }
-                    else
-                    {
-                        reader.Close();
-                        query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
-                        SqlCommand command2 = new SqlCommand(query, con);
-                        SqlDataReader reader2 = command2.ExecuteReader();
-                        if (reader2.HasRows)
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            reader2.Read();
-                            t = reader2.GetDouble(4);
-                        }
-                        else
-                        {
-                            reader2.Close();
-                            query = "SELECT * FROM " + speedTable + "WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId IS NULL AND ProductId IS NULL";
-                            SqlCommand command3 = new SqlCommand(query, con);
-                            SqlDataReader reader3 = command3.ExecuteReader();
-                            if (reader3.HasRows)
+                            if (reader.HasRows)
                             {
-                                reader3.Read();
-                                t = reader3.GetDouble(4);
-                                reader3.Close();
+                                reader.Read();
+                                Theo = reader.GetDouble(4);
+                            }
+                            else
+                            {
+                                reader.Close();
+                                query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
+                                using (SqlCommand command2 = new SqlCommand(query, con))
+                                {
+                                    using (SqlDataReader reader2 = command2.ExecuteReader())
+                                    {
+                                        if (reader2.HasRows)
+                                        {
+                                            reader2.Read();
+                                            Theo = reader2.GetDouble(4);
+                                        }
+                                        else
+                                        {
+                                            reader2.Close();
+                                            query = "SELECT * FROM " + speedTable + "WHERE ResourceID='" + Line.Name + "' AND ProductFamilyId IS NULL AND ProductId IS NULL";
+                                            using (SqlCommand command3 = new SqlCommand(query, con))
+                                            {
+                                                using (SqlDataReader reader3 = command3.ExecuteReader())
+                                                {
+                                                    if (reader3.HasRows)
+                                                    {
+                                                        reader3.Read();
+                                                        Theo = reader3.GetDouble(4);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1077,8 +1107,7 @@ namespace SNPService
                     SNPService.DiagnosticOut(ex.ToString(), 1);
                 }
             }
-
-            return Convert.ToInt32(t);
+            return Convert.ToInt32(Theo);
         }
 
         public string GerResourceID(string ResourceName)
@@ -1088,16 +1117,19 @@ namespace SNPService
             using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
             {
                 con.Open();
-                SqlCommand command = new SqlCommand(sql, con);
-                SqlDataReader reader = command.ExecuteReader();
-                while (reader.Read())
+                using (SqlCommand command = new SqlCommand(sql, con))
                 {
-                    if (!reader.IsDBNull(0))
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        resourceId = (string)reader[0];
+                        while (reader.Read())
+                        {
+                            if (!reader.IsDBNull(0))
+                            {
+                                resourceId = (string)reader[0];
+                            }
+                        }
                     }
                 }
-                reader.Close();
             }
             return resourceId;
         }
