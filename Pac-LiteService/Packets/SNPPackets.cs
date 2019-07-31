@@ -122,7 +122,7 @@ namespace SNPService
                     sqlStringBuilder = new StringBuilder();
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Other] [bit] NOT NULL, [Head_number] [int] NOT NULL," + Errors);
+                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Input] [bit] NOT NULL, [Other] [bit] NOT NULL, [Head_number] [int] NOT NULL," + Errors);
                     sqlStringBuilder.Append(" ) ON [PRIMARY] ");
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
                     sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
@@ -594,8 +594,8 @@ namespace SNPService
                         valueSection += "@" + key + ", ";                                   //and value Reference to be replaced later
                     }
                 }
-                keySection += "[MachineID], [Timestamp] ";                                  //add a machineIDsection and timestamp
-                valueSection += MachineAndLine[0] + ", @Timestamp ";                                  //add to value section to
+                keySection += "[MachineID], [Timestamp], [Input] ";                                  //add a machineIDsection and timestamp
+                valueSection += MachineAndLine[0] + ", @Timestamp, @Input ";                                  //add to value section to
                 sqlStringBuilder.Append(keySection + ")");                                  //cap it off
                 sqlStringBuilder.Append("values ( " + valueSection + ");");//append both to the command string
                 string SQLString = sqlStringBuilder.ToString();                             //Convert builder to sql string
@@ -603,7 +603,8 @@ namespace SNPService
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
-                    {                                                                           //Comand Time!
+                    {
+                        command.Parameters.AddWithValue("@Input", 1 == Convert.ToInt32(receivedPacket["Attempt"]));                                                             //Comand Time!
                         foreach (string key in keys)                                            //foreach key
                         {
                             if (key != "Machine")                                               //Except Machine
