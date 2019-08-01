@@ -8,7 +8,7 @@
         public DiagnosticItem(string Message, int LoggingLevel)
         {
             message = Message;
-            LoggingLevel = logginglevel;
+            logginglevel = LoggingLevel;
         }
     }
 }
