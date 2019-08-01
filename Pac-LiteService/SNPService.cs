@@ -1,5 +1,6 @@
 ﻿using SNPService.Comunications;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -15,13 +16,13 @@ namespace SNPService
         public SNPService()
         {
             InitializeComponent();
-            DiagnosticOut("Hello World!", 1);                                                    //say hello to the world
+            DiagnosticItems.Enqueue(new DiagnosticItem("Hello World!", 1));                                                    //say hello to the world
         }
 
         protected override void OnStart(string[] args)
         {
             CallOnStart();
-            DiagnosticOut("Started up.", 3);                                                    // report making it through startup
+            DiagnosticItems.Enqueue(new DiagnosticItem("Started up.", 3));                                                    // report making it through startup
         }
 
         /// <summary>
@@ -31,38 +32,35 @@ namespace SNPService
         {
             base.OnStop();
             CallOnStop();
-            DiagnosticOut("Stopped", 3);                                                        // report making it through stoping
+            DiagnosticItems.Enqueue(new DiagnosticItem("Stopped", 3));                                                        // report making it through stoping
         }
 
-        public static void DiagnosticOut(string message, int LoggingLevel)                      //report status mesages to a file
+        public void DiagnosticThread()
         {
-            try
+            while (running)
             {
-                string DiagnosticMessage = "";                                                  //message to be output to the file
-                for (int x = 0; x < message.Length; x++)                                        //foreach character in the message
+                try
                 {
-                    if (message[x] != ',')                                                      //if it is not a comma
-                        DiagnosticMessage += message[x];                                        //carry it over
-                }                                                                               //add all sorts of diagnostic datas
-                DiagnosticMessage += ", TimeStamp:" + DateTime.Now.ToString() + ", LoggingLevelNeeded: " + LoggingLevel.ToString() + ", LoggingLevelSelected" + LogggingLevel.ToString();
-                if (LoggingLevel <= LogggingLevel)                                              //if we are asking to see this data
-                {
-                    using (StreamWriter DiagnosticWriter = File.AppendText(ConfigurationManager.AppSettings["DiagnosticFile"]))// @"C:\Users\d.paddock\Desktop\Diagnostic.csv")) defualt
+                    if (DiagnosticItems.Count > 0)
                     {
-                        DiagnosticWriter.WriteLine(DiagnosticMessage);                          //output it to file
+                        DiagnosticItem Result = new DiagnosticItem("Diagnostic Threading Issue.", 1);
+                        DiagnosticItems.TryDequeue(out Result);
+                        if (Result.message != "Diagnostic Threading Issue.")
+                        {
+                            string DiagnosticMessage = Result.message.Replace(",", ""); ;                                                  //message to be output to the file                                                                             //add all sorts of diagnostic datas
+                            DiagnosticMessage += ", TimeStamp:" + DateTime.Now.ToString() + ", LoggingLevelNeeded: " + Result.logginglevel.ToString() + ", LoggingLevelSelected" + LogggingLevel.ToString();
+                            if (Result.logginglevel <= LogggingLevel)                                              //if we are asking to see this data
+                            {
+                                using (StreamWriter DiagnosticWriter = File.AppendText(ConfigurationManager.AppSettings["DiagnosticFile"]))// @"C:\Users\d.paddock\Desktop\Diagnostic.csv")) defualt
+                                {
+                                    DiagnosticWriter.WriteLine(DiagnosticMessage);                          //output it to file
+                                }
+                            }
+
+                        }
                     }
                 }
-            }
-            catch (Exception ex)                                                                //catch any errors and cry becouse we cant log them.
-            {
-                try//try a simplified log
-                {
-                    using (StreamWriter DiagnosticWriter = File.AppendText(ConfigurationManager.AppSettings["DiagnosticFile"]))// @"C:\Users\d.paddock\Desktop\Diagnostic.csv")) defualt
-                    {
-                        DiagnosticWriter.WriteLine(ex.ToString());                              //output it to file
-                    }
-                }
-                catch (Exception Ex)//sadly giveup
+                catch (Exception ex)                                                                //catch any errors and cry becouse we cant log them.
                 {
                 }
             }
@@ -85,7 +83,7 @@ namespace SNPService
         private EMPPackets EMPPackets;                                                          //collection of all EMP Packets and functions
         private SNPPackets SNPPackets;                                                          //collection of all snp packets and functions
         private ControlPackets ControlPackets;                                                  //collection of all Control packets and function
-
+        private bool running = false;
         private string SubTopicName;                                                            //Topic the Main Subscriber is subbed to
         private string Broker;                                                                  //IP of the broker we are connecting to
         private string ClientID;                                                                //Client ID for the SNP Service
@@ -99,6 +97,8 @@ namespace SNPService
 
         private static bool fixingconnection = false;                                           //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
 
+        public static ConcurrentQueue<DiagnosticItem> DiagnosticItems = new ConcurrentQueue<DiagnosticItem>();
+
         #endregion Variable Section
 
         #region Connections/Resources/Misc
@@ -110,10 +110,10 @@ namespace SNPService
         {
             try
             {
-                DiagnosticOut(message, 4);                                                  //log message and bits when it comes in.
-                DiagnosticOut("Packet Header =" + Convert.ToInt32(message[0]).ToString(), 3);//log the header
-                DiagnosticOut("Packet Type=" + Convert.ToInt32(message[1]).ToString(), 3);  //and type
-                DiagnosticOut("SNPID=" + Convert.ToInt32(message[2]).ToString(), 3);        //and SNP ID
+                DiagnosticItems.Enqueue(new DiagnosticItem(message, 4));                                                  //log message and bits when it comes in.
+                DiagnosticItems.Enqueue(new DiagnosticItem("Packet Header =" + Convert.ToInt32(message[0]).ToString(), 3));//log the header
+                DiagnosticItems.Enqueue(new DiagnosticItem("Packet Type=" + Convert.ToInt32(message[1]).ToString(), 3));  //and type
+                DiagnosticItems.Enqueue(new DiagnosticItem("SNPID=" + Convert.ToInt32(message[2]).ToString(), 3));        //and SNP ID
                 switch (Convert.ToInt32(message[0]))                                        //switch packet header
                 {
                     case 1:                                                                 //this means its a SNP message
@@ -152,7 +152,7 @@ namespace SNPService
                             }
                         }
                         else                                                                //if you are silenced and receive a message log it
-                            DiagnosticOut("Received a packet But I am either not sending or Listening!", 2);
+                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
                         break;
 
                     case 2:                                                                 //this means its an EMP message
@@ -174,7 +174,7 @@ namespace SNPService
                             }
                         }
                         else                                                                //if you are silenced or deafend and receive a packet logit
-                            DiagnosticOut("Received a packet But I am either not sending or Listening!", 2);
+                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
                         break;
 
                     case 3:                                                                 //this means its a Control message
@@ -204,7 +204,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                             //catch exceptions
             {
-                DiagnosticOut(ex.ToString(), 1);                                             //log it
+                DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                             //log it
             }
         }
 
@@ -215,26 +215,26 @@ namespace SNPService
         {
             try
             {
-                DiagnosticOut("Connecting MainSubscriber", 2);
+                DiagnosticItems.Enqueue(new DiagnosticItem("Connecting MainSubscriber", 2));
                 MainInputSubsriber = new TopicSubscriber(SubTopicName, Broker, ClientID, ConsumerID); //connect the main Subscriber
                 MainInputSubsriber.OnMessageReceived += new MessageReceivedDelegate(MainInputSubsriber_OnmessageReceived);//add the deligate for when a message is received
                 ThingsToDispose.Add(new Disposable(nameof(MainInputSubsriber), MainInputSubsriber));//add to reference pile so it disposes of itself properly.
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                       //logit
+            catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                       //logit
             //try
             //{
-            //    DiagnosticOut("Connecting SNPPublisher", 2);
+            //     DiagnosticItems.Enqueue (new DiagnosticItem("Connecting SNPPublisher", 2));
             //    SNPPackets.Publisher = new TopicPublisher(SNPPackets.TopicName, Broker);
             //    ThingsToDispose.Add(new Disposable(nameof(SNPPackets.Publisher), SNPPackets.Publisher));
             //}
-            //catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }
+            //catch (Exception ex) {  DiagnosticItems.Enqueue (new DiagnosticItem(ex.ToString(), 1)); }
             try
             {
-                DiagnosticOut("Connecting EMP Publisher", 2);                               //connect the EMp Publisher
+                DiagnosticItems.Enqueue(new DiagnosticItem("Connecting EMP Publisher", 2));                               //connect the EMp Publisher
                 EMPPackets.Publisher = new TopicPublisher(EMPPackets.TopicName, Broker);
                 ThingsToDispose.Add(new Disposable(nameof(EMPPackets.Publisher), EMPPackets.Publisher));//add it to things to dispose
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                       //logit
+            catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                       //logit
         }
 
         /// <summary>
@@ -245,14 +245,14 @@ namespace SNPService
             try
             {
                 // Build connection string
-                DiagnosticOut("Connecting SQL Database", 2);
+                DiagnosticItems.Enqueue(new DiagnosticItem("Connecting SQL Database", 2));
                 ENGDBConnection = new SqlConnectionStringBuilder();                             //create a string builder to connect to the database
                 ENGDBConnection.DataSource = ENG_DBDataSource;                                  //give it the IP
                 ENGDBConnection.UserID = ENG_DBUserID;                                          //and the username
                 ENGDBConnection.Password = ENG_DBPassword;                                      //password
                 ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;                          //and finally the starting database
             }
-            catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                           //logit
+            catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                           //logit
         }
 
         /// <summary>
@@ -267,13 +267,13 @@ namespace SNPService
         /// </summary>
         private void UDPConnections()                                                           //no udp connections anymore :/ still able though!
         {
-            //DiagnosticOut("Connecting to MDE", 2);
+            // DiagnosticItems.Enqueue (new DiagnosticItem("Connecting to MDE", 2);
             //try
             //{
             //    SNPPackets.MDEClient = new UdpClient(SNPPackets.MDEOutPort);
             //    ThingsToDispose.Add(new Disposable(nameof(SNPPackets.MDEClient), SNPPackets.MDEClient));
             //}
-            //catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }                       //logit
+            //catch (Exception ex) {  DiagnosticItems.Enqueue (new DiagnosticItem(ex.ToString(), 1); }                       //logit
         }
 
         /// <summary>
@@ -281,6 +281,7 @@ namespace SNPService
         /// </summary>
         private void CallOnStop()
         {
+            running = false;
             //try
             //{
             //    SNPPackets.MDEClient.Close();//close UDP connections to.
@@ -293,9 +294,9 @@ namespace SNPService
                 try
                 {
                     disposable.Dispose();                                                   //try to dispose it ( they will be regenerated on start
-                    DiagnosticOut(disposable.Name + "Has been Disconected and Disposed", 2);//logit
+                    DiagnosticItems.Enqueue(new DiagnosticItem(disposable.Name + "Has been Disconected and Disposed", 2));//logit
                 }
-                catch (Exception ex) { DiagnosticOut(disposable.Name + ex.ToString(), 1); }  //logit o.o
+                catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(disposable.Name + ex.ToString(), 1)); }  //logit o.o
             }
         }
 
@@ -304,6 +305,8 @@ namespace SNPService
         /// </summary>
         private void CallOnStart()
         {
+            running = true;
+            Task.Run(() => DiagnosticThread());
             SubTopicName = ConfigurationManager.AppSettings["MainTopicName"];               //load everything from the app settings
             Broker = ConfigurationManager.AppSettings["BrokerIP"];
             ClientID = ConfigurationManager.AppSettings["ClientID"];
@@ -328,7 +331,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                            //catch exceptions
             {
-                DiagnosticOut(ex.ToString(), 1);                                            //logem
+                DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                            //logem
             }
         }
 
@@ -349,14 +352,14 @@ namespace SNPService
                 fixingconnection = true;                                                //and tell others not to
                 try
                 {
-                    DiagnosticOut("Connecting SQL Database", 2);                        //logggggggggiittttttttt
+                    DiagnosticItems.Enqueue(new DiagnosticItem("Connecting SQL Database", 2));                        //logggggggggiittttttttt
                     ENGDBConnection = new SqlConnectionStringBuilder();//builder to connect to the database
                     ENGDBConnection.DataSource = ENG_DBDataSource;                                //pass it the ip username password and starting database
                     ENGDBConnection.UserID = ENG_DBUserID;
                     ENGDBConnection.Password = ENG_DBPassword;
                     ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;
                 }
-                catch (Exception ex) { DiagnosticOut(ex.ToString(), 1); }               //log log log log logit
+                catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }               //log log log log logit
                 fixingconnection = false;                                               //unlock it
             }
             functionThatFailed(message);                                                //recall the function that failed

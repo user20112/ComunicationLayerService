@@ -30,7 +30,7 @@ namespace SNPService
         /// </summary>
         public void WarningPacket(string message)
         {
-            SNPService.DiagnosticOut("EMPWarningPacketReceived!", 3);                    //log it
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("EMPWarningPacketReceived!", 3));                    //log it
             Task.Run(() => SQLEMPWarningPacket(message));                               //run it
             Task.Run(() => MQTTEMPWarningPacket(message));                              //send it
         }
@@ -40,7 +40,7 @@ namespace SNPService
         /// </summary>
         public void IndexPacket(string message)
         {
-            SNPService.DiagnosticOut("EMPIndexPacketReceived!", 2);                             //log the packet being received in Diagnostic.
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("EMPIndexPacketReceived!", 2));                             //log the packet being received in Diagnostic.
             try                                                                                 //try loop in case command fails.
             {
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
@@ -123,7 +123,7 @@ namespace SNPService
                             }
                         }
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -133,7 +133,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(IndexPacket, message);                        //reastablish it
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //so if you could log this that would be greaaaaaaat
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //so if you could log this that would be greaaaaaaat
             }
         }
 
@@ -217,7 +217,7 @@ namespace SNPService
                             }
                         }
                         int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);//logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
                     }
                 }
             }
@@ -227,7 +227,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(SQLEMPWarningPacket, message);
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
             }
         }
 

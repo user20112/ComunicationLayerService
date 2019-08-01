@@ -26,10 +26,13 @@ namespace SNPService
         //public UdpClient MDEClient;                                                         // depreciated comunication to MDE over udp
         //public string TopicName = "SNP.Outbound";                                           // Test Output topic
         private string CamstarUsername;                                                     // username used to comunicate with camstar
+
         private string CamstarPassword;                                                     // password used to ocmunicate with camstar
         private string CamstarIP;                                                           // IP of the Camstar System you are talking to
+
         //private string MDEIP;                                                               // currently my ip for MDEing. once it is known to be working i have to get this ip from gerry.
         private int CamstarPort;                                                            // Port of the Camstar system you are talking to
+
         //private int MDEClientPort;                                                          // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                              // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
 
@@ -47,6 +50,7 @@ namespace SNPService
         #endregion Variable Section
 
         #region Packet Section
+
         /// <summary>
         /// Called whenever a new machine is detected
         /// Creates all required databases and entries for the machine detaield in the packet.
@@ -55,7 +59,7 @@ namespace SNPService
         {
             try                                                                             //try loop in case command fails.
             {
-                SNPService.DiagnosticOut("New Machine Packet!", 2);                             // log the packet as have been received
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("New Machine Packet!", 2));                             // log the packet as have been received
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert the json to an object
                 string machineName = receivedPacket["Machine"].ToString();                      //get the important sections of the packet out ( that arent errors)
@@ -80,7 +84,7 @@ namespace SNPService
                 }
                 catch (Exception ex)                                                                          //if this fails set it to defualt no errors
                 {
-                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                     Errors = "";
                 }
                 StringBuilder sqlStringBuilder = new StringBuilder();
@@ -99,7 +103,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Plant", Plant);
                         command.Parameters.AddWithValue("@Engineer", Engineer);
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                     bool Missing = CheckForDatabase(Line);
 
@@ -111,7 +115,7 @@ namespace SNPService
                         using (SqlCommand command = new SqlCommand(SQLString, connection))
                         {                                                                           //Commmand Time!
                             int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                            SNPService.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " databases created", 2));         //logit
                         }
                         sqlStringBuilder = new StringBuilder();                                     //this builder will build the SQL String
                         sqlStringBuilder.Append("use [EngDb-" + Line + "];");
@@ -129,7 +133,7 @@ namespace SNPService
                         using (SqlCommand command = new SqlCommand(SQLString, connection))
                         {                                                                           //Commmand Time!
                             int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                            SNPService.DiagnosticOut(rowsAffected + " databases created", 2);         //logit
+                            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " databases created", 2));         //logit
                         }
                     }
                     string STSDB = machineName + "ShortTimeStatistics";
@@ -144,8 +148,8 @@ namespace SNPService
                         Descriptions.Add(error);
                         Table.Add(STSDB);
                     }
-                    Columns.AddRange(new string[15] { "MachineID", "Timestamp", "Good", "Bad", "Empty","Indexes","NAED","UOM","Timestamp","MReason","UReason","NAED","MachineID","StatusCode","Code" });
-                    Descriptions.AddRange(new string[15] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Time stamp of a given transaction", "Number of good parts produced", "Number of bad parts produced", "Number of times the head was empty during an index", "Number of indexes passed", "Product we are curren tly producing", "Unit of Mesure for the product we are producing",  "Time stamp of a given transaction", "Machine reason for a downtime", "User defined reason for a downtime", "The product we are currently producing","Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Code for which status the machine is in (2 running 1 scheduled downtime 0 unschedled downtime 3 PM", "Code for why the machine went down for camstar" });
+                    Columns.AddRange(new string[15] { "MachineID", "Timestamp", "Good", "Bad", "Empty", "Indexes", "NAED", "UOM", "Timestamp", "MReason", "UReason", "NAED", "MachineID", "StatusCode", "Code" });
+                    Descriptions.AddRange(new string[15] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Time stamp of a given transaction", "Number of good parts produced", "Number of bad parts produced", "Number of times the head was empty during an index", "Number of indexes passed", "Product we are curren tly producing", "Unit of Mesure for the product we are producing", "Time stamp of a given transaction", "Machine reason for a downtime", "User defined reason for a downtime", "The product we are currently producing", "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Code for which status the machine is in (2 running 1 scheduled downtime 0 unschedled downtime 3 PM", "Code for why the machine went down for camstar" });
                     Table.AddRange(new string[15] { DB, DB, DB, DB, DB, DB, DB, DB, DTDB, DTDB, DTDB, DTDB, DTDB, DTDB, DTDB });
                     int x = 0;
                     sqlStringBuilder = new StringBuilder();
@@ -160,7 +164,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Commmand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                     sqlStringBuilder = new StringBuilder();
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
@@ -175,7 +179,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Commmand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -185,7 +189,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(NewMachinePacket, message);                   //reastablish it
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //if not handled log it and move on
             }
         }
 
@@ -196,7 +200,7 @@ namespace SNPService
         {
             try                                                                             //try loop in case command fails.
             {
-                SNPService.DiagnosticOut("Edit Machine Packet!", 2);                            // log the packet as have been received
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Edit Machine Packet!", 2));                            // log the packet as have been received
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //Convert it into a jobject
                 string machineName = receivedPacket["Machine"].ToString();                      //gather important sections into variables
@@ -221,13 +225,13 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Theo", Theo);
                         command.Parameters.AddWithValue("@Engineer", Engineer);
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                     sqlStringBuilder = new StringBuilder();                                     //reset string builder for next command
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                             //load alter table command
                     sqlStringBuilder.Append("Alter Table [" + receivedPacket["Machine"] + "ShortTimeStatistics] ADD ");
                     string ErrorString = receivedPacket["Errors"].ToString();                   //grab all errors passed in
-                     ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
+                    ErrorArray = ErrorString.Split(',');                               //divide the csv of errors
                     string Errors = "";                                                         //this string is added to the sql
                     foreach (string error in ErrorArray)                                        //foreach error add it to the Errors Section
                     {
@@ -239,7 +243,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Comand Time Again!
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
 
                     string STSDB = machineName + "ShortTimeStatistics";
@@ -254,7 +258,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Commmand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -264,7 +268,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(EditMachinePacket, message);                  //reestablish connection
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //else logit and move on
             }
         }
 
@@ -273,7 +277,7 @@ namespace SNPService
         /// </summary>
         public void DeleteMachinePacket(string message)
         {
-            SNPService.DiagnosticOut("Delete Machine Packet!", 2);                          // log the packet as have been received
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Delete Machine Packet!", 2));                          // log the packet as have been received
             string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
             JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;  //convert it to a Jobject
             string Line = receivedPacket["Line"].ToString();
@@ -291,7 +295,7 @@ namespace SNPService
                     {                                                                           //Comand Time!
                         command.Parameters.AddWithValue("@machine", receivedPacket["Machine"].ToString());//replace parameters with values
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                     sqlStringBuilder = new StringBuilder();                                     //clear string builder
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                            //build next section
@@ -302,7 +306,7 @@ namespace SNPService
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                           //Comand Time!
                         int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -312,7 +316,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(DeleteMachinePacket, message);                //restablish the connection
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //else logit and move on
             }
         }
 
@@ -321,7 +325,7 @@ namespace SNPService
         /// </summary>
         public void IndexSummaryPacket(string message)
         {
-            SNPService.DiagnosticOut("Fifteen Minute Packet Received!", 3);                 //logit
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Fifteen Minute Packet Received!", 3));                 //logit
             Task.Run(() => SQLIndexSummary(message));                                       //save data to sql async, return value doesnt matter
             Task.Run(() => CamstarIndexSummary(message));                                   //send data to Camstar, return value doesnt matter
         }
@@ -331,7 +335,7 @@ namespace SNPService
         /// </summary>
         public void DowntimePacket(string message)
         {
-            SNPService.DiagnosticOut("DownTime Packet Received!", 3);                       //logit
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("DownTime Packet Received!", 3));                       //logit
             Task.Run(() => SQLDownTimePacket(message));                                     //Save data to SQL, return value doesnt matter
             Task.Run(() => CamstarDowntimePacket(message));                                 //send data to Camstar, return value doesnt matter
             Task.Run(() => QRQCDownTimePacket(message));                                    //Update QRQC Application for the machine
@@ -342,7 +346,7 @@ namespace SNPService
         /// </summary>
         public void ShortTimeStatisticPacket(string message)
         {
-            SNPService.DiagnosticOut("Short Time Statistic Packet Received!", 3);           //logit
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Short Time Statistic Packet Received!", 3));           //logit
             Task.Run(() => SQLShortTimeStatisticPacket(message));                           //Save data to sql return value doesnt matter
             //Task.Run(() => MDEShortTimeStatisticPacket(message));                         //Send Message to UDP port for MDE (depreciated but kept for incasei t is used elsewhere
         }
@@ -392,7 +396,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
                         command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add the machine name
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -402,7 +406,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(SQLIndexSummary, message);                    //reastablish it
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else log the error and move on
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //else log the error and move on
             }
         }
 
@@ -448,7 +452,7 @@ namespace SNPService
                 PacketStringBuilder.Append("<__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__execute/><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { SNPService.DiagnosticOut(ex.ToString(), 2); }
+            catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
 
         /// <summary>
@@ -510,7 +514,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());
                         command.Parameters.AddWithValue("@Timestamp", DateTime.Now);                 //add a timestamp
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -520,7 +524,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //else logit and move on
             }
         }
 
@@ -569,10 +573,10 @@ namespace SNPService
                             command.Parameters.AddWithValue("@Thru", Thru);
                             command.Parameters.AddWithValue("@Goal", Goal);
                             int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                            SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                         }
                         UpdateQRQC(new Instructions(false, HolderTime, line));
-                        SNPService.DiagnosticOut("Changed QRQC Status", 2);
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Changed QRQC Status", 2));
                     }
                 }
             }
@@ -582,7 +586,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(SQLDownTimePacket, message);                  //reastablish it
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //else logit and move on
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //else logit and move on
             }
         }
 
@@ -626,7 +630,7 @@ namespace SNPService
                 PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
-            catch (Exception ex) { SNPService.DiagnosticOut(ex.ToString(), 2); }
+            catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
 
         /// <summary>
@@ -677,7 +681,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@Timestamp", DateTime.Now);            //add a timestamp
                         command.Parameters.AddWithValue("@Machine", receivedPacket["Machine"].ToString());//add teh machine name
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticOut(rowsAffected + " row(s) inserted", 2);         //logit
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -687,7 +691,7 @@ namespace SNPService
                 {
                     SNPService.ReastablishSQL(SQLShortTimeStatisticPacket, message);        //reestablish it
                 }
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //log it
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //log it
             }
         }
 
@@ -736,7 +740,7 @@ namespace SNPService
         //    }
         //    catch (Exception ex)                                                            //catch exceptions
         //    {
-        //        SNPService.DiagnosticOut(ex.ToString(), 1);                                 //logit and move on
+        //        SNPService. DiagnosticItems.Enqueue (new DiagnosticItem(ex.ToString(), 1);                                 //logit and move on
         //    }
         //}
 
@@ -769,7 +773,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                            // If an error occurred return null string
             {
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                 //logit
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //logit
                 return "";                                                                  //return null string
             }
         }
@@ -840,7 +844,7 @@ namespace SNPService
                     return GetMachineIDAndLine(Machine);
                 }
                 else
-                    SNPService.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //if not handled log it and move on
                 return new string[2] { "", "" };
             }
         }
@@ -877,7 +881,7 @@ namespace SNPService
                     return CheckForDatabase(Line);
                 }
                 else
-                    SNPService.DiagnosticOut(ex.ToString(), 1);                                 //if not handled log it and move on
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //if not handled log it and move on
                 return true;
             }
         }
@@ -968,7 +972,7 @@ namespace SNPService
             }
             catch (Exception ex)
             {
-                SNPService.DiagnosticOut(ex.ToString(), 1);                                         //log it
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                         //log it
             }
         }
 
@@ -1003,7 +1007,7 @@ namespace SNPService
                 }
                 catch (Exception ex)
                 {
-                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
             }
             return ProductFamilyId;                                                                 //were done!
@@ -1033,7 +1037,7 @@ namespace SNPService
                 }
                 catch (Exception ex)
                 {
-                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
             }
 
@@ -1100,7 +1104,7 @@ namespace SNPService
                 }
                 catch (Exception ex)
                 {
-                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
             }
 
@@ -1163,7 +1167,7 @@ namespace SNPService
                 }
                 catch (Exception ex)
                 {
-                    SNPService.DiagnosticOut(ex.ToString(), 1);
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
             }
             return Convert.ToInt32(Theo);
