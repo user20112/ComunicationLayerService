@@ -1,5 +1,6 @@
 ﻿using Camstar.Utility;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -375,4 +376,4 @@ namespace VisualVersionofService
 
         #endregion Connections/Resources/Misc
     }
-}m
+}

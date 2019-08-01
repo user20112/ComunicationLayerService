@@ -2,7 +2,7 @@
 /// If anything in the line class is change, make sure the changes are reflected serverside.
 /// </summary>
 
-namespace SNPService.Comunications.QRQC
+namespace VisualVersionofService.Comunications.QRQC
 {
     public class Line
     {

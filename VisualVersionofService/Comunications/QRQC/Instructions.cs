@@ -8,7 +8,7 @@
 ///
 /// </summary>
 
-namespace SNPService.Comunications.QRQC
+namespace VisualVersionofService.Comunications.QRQC
 {
     [Serializable]
     public struct Instructions

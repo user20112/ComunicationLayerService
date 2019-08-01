@@ -30,7 +30,7 @@ namespace VisualVersionofService
         /// </summary>
         public void WarningPacket(string message)
         {
-            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("EMPWarningPacketReceived!", 3));                    //log it
+            Form1.DiagnosticItems.Enqueue(new DiagnosticItem("EMPWarningPacketReceived!", 3));                    //log it
             Task.Run(() => SQLEMPWarningPacket(message));                               //run it
             Task.Run(() => MQTTEMPWarningPacket(message));                              //send it
         }
@@ -40,7 +40,7 @@ namespace VisualVersionofService
         /// </summary>
         public void IndexPacket(string message)
         {
-            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("EMPIndexPacketReceived!", 2));                             //log the packet being received in Diagnostic.
+            Form1.DiagnosticItems.Enqueue(new DiagnosticItem("EMPIndexPacketReceived!", 2));                             //log the packet being received in Diagnostic.
             try                                                                                 //try loop in case command fails.
             {
                 string jsonString = message.Substring(7, message.Length - 7);                   //grab json data from the end.
@@ -73,7 +73,7 @@ namespace VisualVersionofService
                 sqlStringBuilder.Append(keySection + " )");                                     //cap of the key section
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");                    //append value section to the command string
                 string SQLString = sqlStringBuilder.ToString();                                 //convert vuilder to string
-                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(Form1.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -123,7 +123,7 @@ namespace VisualVersionofService
                             }
                         }
                         int rowsAffected = command.ExecuteNonQuery();                           // execute the command returning number of rows affected
-                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
+                        Form1.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));         //logit
                     }
                 }
             }
@@ -131,9 +131,9 @@ namespace VisualVersionofService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection broke
                 {
-                    SNPService.ReastablishSQL(IndexPacket, message);                        //reastablish it
+                    Form1.ReastablishSQL(IndexPacket, message);                        //reastablish it
                 }
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //so if you could log this that would be greaaaaaaat
+                Form1.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                 //so if you could log this that would be greaaaaaaat
             }
         }
 
@@ -175,7 +175,7 @@ namespace VisualVersionofService
                 sqlStringBuilder.Append(keySection + " )");                                 //and append/capoff the strings
                 sqlStringBuilder.Append("Values ( " + valueSection + " );");
                 SQLString = sqlStringBuilder.ToString();                                    //convert to string
-                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(Form1.ENGDBConnection.ConnectionString))
                 {
                     connection.Open();                                                          //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -217,7 +217,7 @@ namespace VisualVersionofService
                             }
                         }
                         int rowsAffected = command.ExecuteNonQuery();// execute the command returning number of rows affected
-                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
+                        Form1.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
                     }
                 }
             }
@@ -225,9 +225,9 @@ namespace VisualVersionofService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))
                 {
-                    SNPService.ReastablishSQL(SQLEMPWarningPacket, message);
+                    Form1.ReastablishSQL(SQLEMPWarningPacket, message);
                 }
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
+                Form1.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
             }
         }
 
