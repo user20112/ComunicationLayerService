@@ -305,32 +305,32 @@ namespace SNPService
         /// </summary>
         private void CallOnStart()
         {
-            if (ConfigurationManager.AppSettings["ResetENGDBPassword"] != "")
-            {
-                Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetENGDBPassword"], true);
-            }
-            if (ConfigurationManager.AppSettings["ResetCamstarPassword"] != "")
-            {
-                Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);
-            }
-            running = true;
-            Task.Run(() => DiagnosticThread());
-            SubTopicName = ConfigurationManager.AppSettings["MainTopicName"];               //load everything from the app settings
-            Broker = ConfigurationManager.AppSettings["BrokerIP"];
-            ClientID = ConfigurationManager.AppSettings["ClientID"];
-            ConsumerID = ConfigurationManager.AppSettings["ConsumerID"];
-            ENG_DBDataSource = ConfigurationManager.AppSettings["ENGDBIP"];
-            ENG_DBUserID = ConfigurationManager.AppSettings["ENGDBUser"];
-            ENG_DBPassword =Encryptor.EncryptOrDecrypt(ConfigurationManager.AppSettings["ENGDBPassword"]);
-            ENG_DBInitialCatalog = ConfigurationManager.AppSettings["ENGDBDatabase"];
-            LogggingLevel = Convert.ToInt32(ConfigurationManager.AppSettings["LogggingLevel"]);
-            Listening = Convert.ToInt32(ConfigurationManager.AppSettings["Listening"]) == 1;
-            Sending = Convert.ToInt32(ConfigurationManager.AppSettings["Sending"]) == 1;
-            EMPPackets = new EMPPackets();                                                  //generate the packet classes
-            SNPPackets = new SNPPackets();
-            ControlPackets = new ControlPackets();
             try
             {
+                if (ConfigurationManager.AppSettings["ResetENGDBPassword"] != "")
+                {
+                    Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetENGDBPassword"], true);
+                }
+                if (ConfigurationManager.AppSettings["ResetCamstarPassword"] != "")
+                {
+                    Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);
+                }
+                running = true;
+                Task.Run(() => DiagnosticThread());
+                SubTopicName = ConfigurationManager.AppSettings["MainTopicName"];               //load everything from the app settings
+                Broker = ConfigurationManager.AppSettings["BrokerIP"];
+                ClientID = ConfigurationManager.AppSettings["ClientID"];
+                ConsumerID = ConfigurationManager.AppSettings["ConsumerID"];
+                ENG_DBDataSource = ConfigurationManager.AppSettings["ENGDBIP"];
+                ENG_DBUserID = ConfigurationManager.AppSettings["ENGDBUser"];
+                ENG_DBPassword = Encryptor.EncryptOrDecrypt(ConfigurationManager.AppSettings["ENGDBPassword"]);
+                ENG_DBInitialCatalog = ConfigurationManager.AppSettings["ENGDBDatabase"];
+                LogggingLevel = Convert.ToInt32(ConfigurationManager.AppSettings["LogggingLevel"]);
+                Listening = Convert.ToInt32(ConfigurationManager.AppSettings["Listening"]) == 1;
+                Sending = Convert.ToInt32(ConfigurationManager.AppSettings["Sending"]) == 1;
+                EMPPackets = new EMPPackets();                                                  //generate the packet classes
+                SNPPackets = new SNPPackets();
+                ControlPackets = new ControlPackets();
                 ThingsToDispose = new List<Disposable>();                                   //reset list of objects that need to be disposed
                 Task.Run(() => MQTTConnections());                                          //open all MQTT Connections
                 Task.Run(() => SQLConnections());                                           //open alll SQL Connections
@@ -339,7 +339,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                            //catch exceptions
             {
-                DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                            //logem
+                DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));              //logem
             }
         }
 
