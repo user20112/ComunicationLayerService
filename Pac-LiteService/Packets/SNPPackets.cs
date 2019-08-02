@@ -39,7 +39,7 @@ namespace SNPService
         public SNPPackets()
         {                                                       //set the owner of this class
             CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];          // pull Camstar username
-            CamstarPassword = ConfigurationManager.AppSettings["CamstarPassword"];          //and camstar password
+            CamstarPassword = Encryptor.EncryptOrDecrypt(ConfigurationManager.AppSettings["CamstarPassword"]);          //and camstar password
             CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];                      //and camstar ip
             CamstarPort = Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"]); //and Camstar Port
             //MDEIP = ConfigurationManager.AppSettings["MDEIP"];                              //and MDE Ip deprecieted as MDE is no longer used

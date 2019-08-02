@@ -305,6 +305,14 @@ namespace SNPService
         /// </summary>
         private void CallOnStart()
         {
+            if (ConfigurationManager.AppSettings["ResetENGDBPassword"] != "")
+            {
+                Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetENGDBPassword"], true);
+            }
+            if (ConfigurationManager.AppSettings["ResetCamstarPassword"] != "")
+            {
+                Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);
+            }
             running = true;
             Task.Run(() => DiagnosticThread());
             SubTopicName = ConfigurationManager.AppSettings["MainTopicName"];               //load everything from the app settings
@@ -313,7 +321,7 @@ namespace SNPService
             ConsumerID = ConfigurationManager.AppSettings["ConsumerID"];
             ENG_DBDataSource = ConfigurationManager.AppSettings["ENGDBIP"];
             ENG_DBUserID = ConfigurationManager.AppSettings["ENGDBUser"];
-            ENG_DBPassword = ConfigurationManager.AppSettings["ENGDBPassword"];
+            ENG_DBPassword =Encryptor.EncryptOrDecrypt(ConfigurationManager.AppSettings["ENGDBPassword"]);
             ENG_DBInitialCatalog = ConfigurationManager.AppSettings["ENGDBDatabase"];
             LogggingLevel = Convert.ToInt32(ConfigurationManager.AppSettings["LogggingLevel"]);
             Listening = Convert.ToInt32(ConfigurationManager.AppSettings["Listening"]) == 1;
@@ -352,7 +360,7 @@ namespace SNPService
                 fixingconnection = true;                                                //and tell others not to
                 try
                 {
-                    DiagnosticItems.Enqueue(new DiagnosticItem("Connecting SQL Database", 2));                        //logggggggggiittttttttt
+                    DiagnosticItems.Enqueue(new DiagnosticItem("Connecting SQL Database", 2));//logggggggggiittttttttt
                     ENGDBConnection = new SqlConnectionStringBuilder();//builder to connect to the database
                     ENGDBConnection.DataSource = ENG_DBDataSource;                                //pass it the ip username password and starting database
                     ENGDBConnection.UserID = ENG_DBUserID;
@@ -364,7 +372,6 @@ namespace SNPService
             }
             functionThatFailed(message);                                                //recall the function that failed
         }
-
         #endregion Connections/Resources/Misc
     }
 }

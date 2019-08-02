@@ -87,6 +87,7 @@
     <Compile Include="Comunications\TopicPublisher.cs" />
     <Compile Include="Comunications\TopicSubscriber.cs" />
     <Compile Include="DiagnosticItem.cs" />
+    <Compile Include="Encryptor.cs" />
     <Compile Include="Packets\ControlPackets.cs" />
     <Compile Include="Packets\EMPPackets.cs" />
     <Compile Include="SNPService.cs">
