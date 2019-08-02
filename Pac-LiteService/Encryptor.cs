@@ -46,7 +46,6 @@ namespace SNPService
             {
                 result += (char)((byte)(~((byte)Input[x])));
             }
-            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(result, 1));
             return result;
         }
 
