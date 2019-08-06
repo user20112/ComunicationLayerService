@@ -39,7 +39,7 @@ namespace SNPService
         public SNPPackets()
         {                                                       //set the owner of this class
             CamstarUsername = ConfigurationManager.AppSettings["CamstarUsername"];          // pull Camstar username
-            CamstarPassword = Encryptor.EncryptOrDecrypt(ConfigurationManager.AppSettings["CamstarPassword"]);          //and camstar password
+            CamstarPassword = Camstar.Util.CryptUtil.Encrypt(Encryptor.EncryptOrDecrypt(ConfigurationManager.AppSettings["CamstarPassword"]));          //and camstar password
             CamstarIP = ConfigurationManager.AppSettings["CamstarIP"];                      //and camstar ip
             CamstarPort = Convert.ToInt32(ConfigurationManager.AppSettings["CamstarPort"]); //and Camstar Port
             //MDEIP = ConfigurationManager.AppSettings["MDEIP"];                              //and MDE Ip deprecieted as MDE is no longer used
@@ -350,6 +350,14 @@ namespace SNPService
             Task.Run(() => SQLShortTimeStatisticPacket(message));                           //Save data to sql return value doesnt matter
             //Task.Run(() => MDEShortTimeStatisticPacket(message));                         //Send Message to UDP port for MDE (depreciated but kept for incasei t is used elsewhere
         }
+        /// <summary>
+        /// Packet sent when a product is switched over.
+        /// </summary>
+        public void ProductChangeOverPacket(string message)
+        {
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Short Time Statistic Packet Received!", 3));//logit
+            Task.Run(() => CamstarProductChangePacket(message));
+        }
 
         /// <summary>
         /// SQL section of the Index Summary. saves data to the resource table.
@@ -422,9 +430,9 @@ namespace SNPService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
                 PacketStringBuilder.Append("<__InSite __encryption=\"2\" __version=\"1.1\"><__session><__connect><user>");
-                PacketStringBuilder.Append("<__name>d.paddock</__name>");
+                PacketStringBuilder.Append("<__name>" + CamstarUsername + "</__name>");
                 PacketStringBuilder.Append("</user>");
-                PacketStringBuilder.Append("<password __encrypted=\"yes\">d81b896ee9a9697df6334a1df6f7e8286c9866e0eb243f3c4ca9b80fc0e38dd3d8c0ccef78401ff7</password>");
+                PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password>");
                 PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>");
                 PacketStringBuilder.Append("<__name>");
                 PacketStringBuilder.Append("<![CDATA[]]>");
@@ -451,6 +459,27 @@ namespace SNPService
                 PacketStringBuilder.Append("</UOM></__inputData>");
                 PacketStringBuilder.Append("<__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__execute/><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
+            }
+            catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
+        }
+
+        /// <summary>
+        /// Camstar section of the Fifteen Minut Packet sends a throughput packet for the resource named for the machine.
+        /// </summary>
+        private void CamstarProductChangePacket(string message)
+        {
+            string DataReceived;
+            try
+            {
+                string jsonString = message.Substring(7, message.Length - 7);//grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
+                StringBuilder PacketStringBuilder = new StringBuilder();
+                PacketStringBuilder.Append("<__InSite __encryption=\"2\" __version=\"1.1\"><__session><__connect><user>");
+                PacketStringBuilder.Append("<__name>" + CamstarUsername + "</__name>");
+                PacketStringBuilder.Append("</user>");
+                PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password></__connect></__session>");
+                PacketStringBuilder.Append("<__service __serviceType=\"CollectResourceData\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><DataCollectionDef><__name><![CDATA[HIL-Running-ProductType]]></__name><__useROR><![CDATA[true]]></__useROR></DataCollectionDef><ParametricData __action=\"create\" __CDOTypeName=\"DataPointSummary\"><DataPointDetails><__listItem __listItemAction=\"add\" __CDOTypeName=\"DataPointDetails\"><DataPoint><__name><![CDATA[ProductType]]></__name><__parent __CDOTypeName=\"UserDataCollectionDef\"><__Id><![CDATA[001c6180000000ca]]></__Id><__name><![CDATA[HIL-Running-ProductType]]></__name><__useROR><![CDATA[true]]></__useROR></__parent></DataPoint><DataType><![CDATA[4]]></DataType><DataValue><![CDATA[" + receivedPacket["NAED"] + "]]></DataValue></__listItem></DataPointDetails><OverrideDataPointLimits><![CDATA[True]]></OverrideDataPointLimits></ParametricData><Resource><__name><![CDATA[" + receivedPacket["Machine"]+ "]]></__name></Resource></__inputData><__execute/><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
+               DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
@@ -602,9 +631,9 @@ namespace SNPService
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
                 StringBuilder PacketStringBuilder = new StringBuilder();
                 PacketStringBuilder.Append("<__InSite __encryption=\"2\" __version=\"1.1\"><__session><__connect><user>");
-                PacketStringBuilder.Append("<__name>d.paddock</__name>");
+                PacketStringBuilder.Append("<__name>" + CamstarUsername + "</__name>");
                 PacketStringBuilder.Append("</user>");
-                PacketStringBuilder.Append("<password __encrypted=\"yes\">d81b896ee9a9697df6334a1df6f7e8286c9866e0eb243f3c4ca9b80fc0e38dd3d8c0ccef78401ff7</password>");
+                PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password>");
                 PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
                 PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
                 PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><ResourceStatusCode>");
@@ -961,7 +990,7 @@ namespace SNPService
                 string serializedObject = jss.Serialize(i);                                         //serialize the object for trasmission
                 string SERVERIP = ConfigurationManager.AppSettings["QRQC_Service_SERVERIP"];        //grab the server ip from config
                 IPAddress ipAddress = IPAddress.Parse(SERVERIP);                                    //parse the ip
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, 61752);                         //
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, 61752);                             //
                 Socket sender = new Socket(ipAddress.AddressFamily,                                 // Create a TCP/IP  socket.
                     SocketType.Stream, ProtocolType.Tcp);                                           //
                 sender.Connect(remoteEP);                                                           // Connect the socket to the remote endpoint.

@@ -134,6 +134,10 @@ namespace SNPService
                                     Task.Run(() => SNPPackets.ShortTimeStatisticPacket(message));
                                     break;
 
+                                case 4:                                                     //Product Changeover Packet
+                                    Task.Run(() => SNPPackets.ProductChangeOverPacket(message));
+                                    break;
+
                                 case 252:                                                   //Delete Machine Packet
                                     Task.Run(() => SNPPackets.DeleteMachinePacket(message));
                                     break;
