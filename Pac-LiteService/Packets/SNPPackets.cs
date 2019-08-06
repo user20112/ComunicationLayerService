@@ -87,7 +87,8 @@ namespace SNPService
                 }
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the MachineInfoEntry
-                sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
+                sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , "
+                    +"Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
                 string SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
@@ -125,7 +126,8 @@ namespace SNPService
                         sqlStringBuilder.Append("PRIMARY KEY CLUSTERED ");
                         sqlStringBuilder.Append("(");
                         sqlStringBuilder.Append("	[columnIdPK] ASC");
-                        sqlStringBuilder.Append(")WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]");
+                        sqlStringBuilder.Append(")WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF"
+                    + ", ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]");
                         sqlStringBuilder.Append(") ON [PRIMARY]");
                         SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                         using (SqlCommand command = new SqlCommand(SQLString, connection))
@@ -137,8 +139,12 @@ namespace SNPService
                     string STSDB = machineName + "ShortTimeStatistics";                             //Stores the Database string for short time statistics
                     string DB = machineName;                                                        //Main index sumary
                     string DTDB = machineName + "DownTimes";                                        //and Machine downtimes respectivly.
-                    List<string> Columns = new List<string>(new string[8] { "MachineID", "Timestamp", "Good", "Bad", "Empty", "Attempt", "Input", "Head_number" });//insert the hardcoded columns and their descriptions
-                    List<string> Descriptions = new List<string>(new string[8] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Time stamp of a given transaction", "wether the part was good", "wether the part was bad", "weather the head was empty", "wether we attempted to make a part", "Weather we received and input and attempted to make a product", "which head it was on" });
+                    List<string> Columns = new List<string>(new string[8] { "MachineID", "Timestamp",
+                        "Good", "Bad", "Empty", "Attempt", "Input", "Head_number" });               //insert the hardcoded columns and their descriptions
+                    List<string> Descriptions = new List<string>(new string[8] {
+                        "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.",
+                        "Time stamp of a given transaction", "wether the part was good", "wether the part was bad", "weather the head was empty",
+                        "wether we attempted to make a part", "Weather we received and input and attempted to make a product", "which head it was on" });
                     List<string> Table = new List<string>(new string[8] { STSDB, STSDB, STSDB, STSDB, STSDB, STSDB, STSDB, STSDB });//insert the tab le they come from
                     foreach (string error in receivedPacket["Errors"].ToString().Split(','))        //split up the errors passsed in and foreach
                     {
@@ -146,8 +152,15 @@ namespace SNPService
                         Descriptions.Add(error);                                                    //and description to the error name
                         Table.Add(STSDB);                                                           //and the database to the ShortTimeStatistics Database.
                     }
-                    Columns.AddRange(new string[15] { "MachineID", "Timestamp", "Good", "Bad", "Empty", "Indexes", "NAED", "UOM", "Timestamp", "MReason", "UReason", "NAED", "MachineID", "StatusCode", "Code" });//add hardcoded column names and descriptions
-                    Descriptions.AddRange(new string[15] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Time stamp of a given transaction", "Number of good parts produced", "Number of bad parts produced", "Number of times the head was empty during an index", "Number of indexes passed", "Product we are curren tly producing", "Unit of Mesure for the product we are producing", "Time stamp of a given transaction", "Machine reason for a downtime", "User defined reason for a downtime", "The product we are currently producing", "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.", "Code for which status the machine is in (2 running 1 scheduled downtime 0 unschedled downtime 3 PM", "Code for why the machine went down for camstar" });
+                    Columns.AddRange(new string[15] { "MachineID", "Timestamp", "Good", "Bad", "Empty",
+                        "Indexes", "NAED", "UOM", "Timestamp", "MReason", "UReason", "NAED", "MachineID", "StatusCode", "Code" });//add hardcoded column names and descriptions
+                    Descriptions.AddRange(new string[15] { "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry.",
+                        "Time stamp of a given transaction", "Number of good parts produced", "Number of bad parts produced", "Number of times the head was empty during an index",
+                        "Number of indexes passed", "Product we are curren tly producing", "Unit of Mesure for the product we are producing", "Time stamp of a given transaction",
+                        "Machine reason for a downtime", "User defined reason for a downtime", "The product we are currently producing",
+                        "Machine ID that corolates all info in the Machine Info Table to the Machine in each other table entry."
+                        , "Code for which status the machine is in (2 running 1 scheduled downtime 0 unschedled downtime 3 PM",
+                        "Code for why the machine went down for camstar" });
                     Table.AddRange(new string[15] { DB, DB, DB, DB, DB, DB, DB, DB, DTDB, DTDB, DTDB, DTDB, DTDB, DTDB, DTDB });//these ones are all part of the DowntimeDatabase.
                     int x = 0;
                     sqlStringBuilder = new StringBuilder();                                         //used to build the isnert querry
@@ -167,12 +180,18 @@ namespace SNPService
                     sqlStringBuilder = new StringBuilder();
                     sqlStringBuilder.Append(" USE [EngDb-" + Line + "] ");                          //Load the create tables with defualt table information using MachineName as the resource name and line as the database name
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "ShortTimeStatistics](");
-                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] [bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, [Input] [bit] NOT NULL, [Other] [bit] NOT NULL, [Head_number] [int] NOT NULL," + Errors);
+                    sqlStringBuilder.Append("	[MachineID] [int] NOT NULL,Timestamp [datetime2] NOT NULL, [Good] "
+                    + "[bit] NOT NULL, [Bad] [bit] NOT NULL, [Empty] [bit] NOT NULL, [Attempt] [bit] NOT NULL, "
+                    + "[Input] [bit] NOT NULL, [Other] [bit] NOT NULL, [Head_number] [int] NOT NULL," + Errors);
                     sqlStringBuilder.Append(" ) ON [PRIMARY] ");                                    //Create the Short Time Statistics Index Summary and Downtime Tables.
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "](");
-                    sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED] [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
+                    sqlStringBuilder.Append(" 	[EntryID] [int] IDENTITY(1,1) NOT NULL,	[MachineID] [int] NULL,	"
+                    + "[Good] [int] NULL,	[Bad] [int] NULL,	[Empty] [int] NULL,	[Indexes] [int] NULL,	[NAED]"
+                    + " [varchar](20) NULL,	[UOM] [varchar](10) NULL,	[Timestamp] [datetime2] NULL) ON [PRIMARY] ");
                     sqlStringBuilder.Append(" CREATE TABLE [dbo].[" + machineName + "DownTimes](");
-                    sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	[StatusCode] [nvarchar](30) NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
+                    sqlStringBuilder.Append(" 	[Timestamp] [datetime2] NULL,	[MReason] [varchar](255) NULL,	"
+                    + "[UReason] [varchar](255) NULL,	[NAED] [varchar](20) NULL,	[MachineID] [int] NULL,	"
+                    + "[StatusCode] [nvarchar](30) NULL,	[Code] [int] NULL) ON [PRIMARY]; ");
                     SQLString = sqlStringBuilder.ToString();                                        //Convert the builder to the string
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {                                                                               //Commmand Time!
@@ -209,7 +228,8 @@ namespace SNPService
 
                 StringBuilder sqlStringBuilder = new StringBuilder();                               //string builder to build the sql
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the edit command using Machine as the resource name
-                sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , Theo = @Theo, Engineer = @Engineer  where MachineName = @machine;");
+                sqlStringBuilder.Append(" update MachineInfoTable set Line = @Line, SNPID = @SNPID , "
+                    + "Theo = @Theo, Engineer = @Engineer  where MachineName = @machine;");
                 string SQLString = sqlStringBuilder.ToString();                                     //convert the builder to a string
                 string[] ErrorArray;
                 using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
@@ -432,7 +452,8 @@ namespace SNPService
                 PacketStringBuilder.Append("<__name>" + CamstarUsername + "</__name>");             //load in the username
                 PacketStringBuilder.Append("</user>");
                 PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password>");//and password ( already encrypted check where it gets loaded from app config.)
-                PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceThruput\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>");
+                PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceThruput\">"
+                    + "<__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><MfgOrder>");
                 PacketStringBuilder.Append("<__name>");                                             //<v^ load the Service base setup
                 PacketStringBuilder.Append("<![CDATA[]]>");
                 PacketStringBuilder.Append("</__name>");
@@ -456,7 +477,9 @@ namespace SNPService
                 PacketStringBuilder.Append("<![CDATA[EA]]>");
                 PacketStringBuilder.Append("</__name>");
                 PacketStringBuilder.Append("</UOM></__inputData>");                                 //dont forget the Execute. the packets you scrape from camstar are missing it but it is highly important to add one after service/input data.
-                PacketStringBuilder.Append("<__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__execute/><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
+                PacketStringBuilder.Append("<__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName>"
+                    + "</__perform><__execute/><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired />"
+                    + "<MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()); //send it and grab the data.
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
@@ -477,7 +500,21 @@ namespace SNPService
                 PacketStringBuilder.Append("<__name>" + CamstarUsername + "</__name>");             // Load defualt setup and insert Username
                 PacketStringBuilder.Append("</user>");                                              //v and password
                 PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password></__connect></__session>");
-                PacketStringBuilder.Append("<__service __serviceType=\"CollectResourceData\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><DataCollectionDef><__name><![CDATA[HIL-Running-ProductType]]></__name><__useROR><![CDATA[true]]></__useROR></DataCollectionDef><ParametricData __action=\"create\" __CDOTypeName=\"DataPointSummary\"><DataPointDetails><__listItem __listItemAction=\"add\" __CDOTypeName=\"DataPointDetails\"><DataPoint><__name><![CDATA[ProductType]]></__name><__parent __CDOTypeName=\"UserDataCollectionDef\"><__Id><![CDATA[001c6180000000ca]]></__Id><__name><![CDATA[HIL-Running-ProductType]]></__name><__useROR><![CDATA[true]]></__useROR></__parent></DataPoint><DataType><![CDATA[4]]></DataType><DataValue><![CDATA[" + receivedPacket["NAED"] + "]]></DataValue></__listItem></DataPointDetails><OverrideDataPointLimits><![CDATA[True]]></OverrideDataPointLimits></ParametricData><Resource><__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name></Resource></__inputData><__execute/><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName></__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired /><MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
+                PacketStringBuilder.Append("<__service __serviceType=\"CollectResourceData\">"
+                    + "<__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><DataCollectionDef>"
+                    + "<__name><![CDATA[HIL-Running-ProductType]]></__name><__useROR><![CDATA[true]]>"
+                    + "</__useROR></DataCollectionDef><ParametricData __action=\"create\" __CDOTypeName=\"DataPointSummary\">"
+                    + "<DataPointDetails><__listItem __listItemAction=\"add\" __CDOTypeName=\"DataPointDetails\"><DataPoint>"
+                    + "<__name><![CDATA[ProductType]]></__name><__parent __CDOTypeName=\"UserDataCollectionDef\"><__Id>"
+                    + "<![CDATA[001c6180000000ca]]></__Id><__name><![CDATA[HIL-Running-ProductType]]></__name><__useROR>"
+                    + "<![CDATA[true]]></__useROR></__parent></DataPoint><DataType><![CDATA[4]]></DataType><DataValue>"
+                    + "<![CDATA[" + receivedPacket["NAED"] + "]]></DataValue></__listItem></DataPointDetails>"
+                    + "<OverrideDataPointLimits><![CDATA[True]]></OverrideDataPointLimits></ParametricData>"
+                    + "<Resource><__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name></Resource>"
+                    + "</__inputData><__execute/><__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName>"
+                    + "</__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired />"
+                    + "<MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr>"
+                    + "</__requestData></__service></__InSite>");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()); //cap it off with the rest of the Hardcoded info and the Machine Name and NAED.
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
@@ -569,7 +606,8 @@ namespace SNPService
                     StringBuilder sqlStringBuilder = new StringBuilder();                           //create a string builder to make the sql string
                     string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());      //Grabs Machine in [0] and line in [1]
                     sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
-                    sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
+                    sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,"
+                    + "ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
                     string SQLString = sqlStringBuilder.ToString();                                 //convert Builder to string
                     string ResourceId = GerResourceID(receivedPacket["Machine"].ToString());
                     string ProductID = GetProductId(receivedPacket["NAED"].ToString());
@@ -633,7 +671,8 @@ namespace SNPService
                 PacketStringBuilder.Append("<__name>" + CamstarUsername + "</__name>");
                 PacketStringBuilder.Append("</user>");
                 PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password>");
-                PacketStringBuilder.Append("</__connect></__session><__service __serviceType=\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
+                PacketStringBuilder.Append("</__connect></__session><__service __serviceType="
+                    + "\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
                 PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
                 PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><ResourceStatusCode>");
                 switch (Convert.ToInt32(receivedPacket["StatusCode"]))
@@ -655,7 +694,8 @@ namespace SNPService
                         break;
                 }
                 PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[]]></__name>");
-                PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData ><CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
+                PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData >"
+                    + "<CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
                 DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
@@ -695,7 +735,7 @@ namespace SNPService
                     connection.Open();                                                              //open the connection
                     using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {
-                        command.Parameters.AddWithValue("@Input", 1 == Convert.ToInt32(receivedPacket["Attempt"]));                                                             //Comand Time!
+                        command.Parameters.AddWithValue("@Input", 1 == Convert.ToInt32(receivedPacket["Attempt"]));//Comand Time!
                         foreach (string key in keys)                                                //foreach key
                         {
                             if (key != "Machine")                                                   //Except Machine
@@ -1010,7 +1050,8 @@ namespace SNPService
             string ProductFamilyId = "";                                                            //initialize as empty
             string productTable = ConfigurationManager.AppSettings["camProductTable"];              //this is the table that stores all product information
             string productBaseTable = ConfigurationManager.AppSettings["camProductBaseTable"];      //this is the table for the bases
-            string query = "SELECT ProductFamilyId FROM " + productTable + " WHERE ProductBaseId=(SELECT ProductBaseId FROM " + productBaseTable + " WHERE ProductName='" + ProductName + "')";//select the product id where the product name is correct
+            string query = "SELECT ProductFamilyId FROM " + productTable + " WHERE ProductBaseId=(SELECT "
+                    + "ProductBaseId FROM " + productBaseTable + " WHERE ProductName='" + ProductName + "')";//select the product id where the product name is correct
             using (SqlConnection con = new SqlConnection())                                         //create the connection
             {
                 con.ConnectionString = ConfigurationManager.AppSettings["DBCamstarConnectionString"] + "User Id= camstaruser; Password= c@mst@rus3r;";
