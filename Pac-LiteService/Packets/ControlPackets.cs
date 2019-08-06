@@ -11,6 +11,9 @@ namespace SNPService
         {
         }
 
+        /// <summary>
+        /// Sets the logging level of the SNP Service
+        /// </summary>
         public void LoggingLevel(string message)
         {
             try
@@ -24,15 +27,18 @@ namespace SNPService
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
                     SNPService.LogggingLevel = OldSetting;                                                              //sleep for the time requested in seconds before setting the setting back
-                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Logging Level Has been set to " + OldSetting.ToString(), 1));              //loggit
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Logging Level Has been set to " + OldSetting.ToString(), 1));//loggit
                 }
             }
             catch (Exception ex)                                                                                        //catch all errors
             {
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                                             //and definitly dont log them that would be terrible why would you do such a thing i mean cmon we worked so hard on this application and we logged every other error in it so why would we log this one ? we wouldnt it just doesnt make sense so cmon get your head out of the gutter man
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                               //and definitly dont log them that would be terrible why would you do such a thing i mean cmon we worked so hard on this application and we logged every other error in it so why would we log this one ? we wouldnt it just doesnt make sense so cmon get your head out of the gutter man
             }
         }
 
+        /// <summary>
+        /// Stops the program from sending out any messages
+        /// </summary>
         public void Silence(string message)
         {
             try
@@ -41,7 +47,7 @@ namespace SNPService
                 string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert to jobject
                 SNPService.Sending = Convert.ToInt32(receivedPacket["Sendbool"]) == 1;                                  //Set the Sending bool
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 21));         //log it
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Sending Has been set to" + receivedPacket["Sendbool"].ToString(), 21));//log it
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      // if int time in seconds is set and not 0
                 {
                     Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
@@ -54,10 +60,13 @@ namespace SNPService
             }
             catch (Exception ex)                                                                                        //catch errors
             {
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                                             //log them
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                               //log them
             }
         }
 
+        /// <summary>
+        /// Stops the service from listening for any messages.
+        /// </summary>
         public void Deafen(string message)
         {
             try
@@ -66,10 +75,10 @@ namespace SNPService
                 string jsonString = message.Substring(7, message.Length - 7);                                           //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;                          //convert to jobject
                 SNPService.Listening = Convert.ToInt32(receivedPacket["ListenBool"]) == 1;                              //set setting
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 1));     //logit
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Listening Has been set to" + receivedPacket["ListenBool"].ToString(), 1));//logit
                 if (Convert.ToInt32(receivedPacket["IntTimeInSeconds"] ?? 0) != 0)                                      //if inttime inseconds is set and not 0
                 {
-                    Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);//a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
+                    Thread.Sleep(Convert.ToInt32(receivedPacket["IntTimeInSeconds"]) * 1000);                           //a bit worried about exhuasting the number of threads in the threadpool. However there shouldnt be many threads consumed by control Messages so it should be ok.
                     SNPService.Listening = OldSetting;                                                                  //sleep for that long then set the setting back
                     if (OldSetting)
                         SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Listening Has been set to 1", 1));
@@ -79,7 +88,7 @@ namespace SNPService
             }
             catch (Exception ex)                                                                                        //catch the errors
             {
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                                             //let it log it
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                               //let it log it
             }
         }
     }
