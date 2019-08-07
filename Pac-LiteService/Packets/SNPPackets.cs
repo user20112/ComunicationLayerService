@@ -29,7 +29,6 @@ namespace SNPService
         //private int MDEClientPort;                                                            // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                                // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
         private string CamstarUsername;                                                         // username used to comunicate with camstar
-
         private string CamstarPassword;                                                         // password used to ocmunicate with camstar
         private string CamstarIP;                                                               // IP of the Camstar System you are talking to
         private int CamstarPort;                                                                // Port of the Camstar system you are talking to
