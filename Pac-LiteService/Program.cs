@@ -25,6 +25,7 @@ namespace SNPService
                 ServiceBase.Run(servicesToRun);                 //else we just run it
             }
         }
+
         /// <summary>
         /// Runs the services in a way that allows debugging on visual studio.
         /// </summary>

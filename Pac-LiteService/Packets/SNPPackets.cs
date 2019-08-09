@@ -29,6 +29,7 @@ namespace SNPService
         //private int MDEClientPort;                                                            // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                                // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
         private string CamstarUsername;                                                         // username used to comunicate with camstar
+
         private string CamstarPassword;                                                         // password used to ocmunicate with camstar
         private string CamstarIP;                                                               // IP of the Camstar System you are talking to
         private int CamstarPort;                                                                // Port of the Camstar system you are talking to
@@ -87,7 +88,7 @@ namespace SNPService
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["ENGDBDatabase"] + " ] ");//load the MachineInfoEntry
                 sqlStringBuilder.Append(" insert into MachineInfoTable (MachineName, Line, SNPID , "
-                    +"Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
+                    + "Theo,Plant , Engineer) values( @machine , @Line , @SNPID , @Theo, @Plant , @Engineer);");
                 string SQLString = sqlStringBuilder.ToString();                                    //Convert the builder to the string
                 using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {

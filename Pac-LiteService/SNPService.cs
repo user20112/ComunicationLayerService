@@ -19,16 +19,17 @@ namespace SNPService
 
         private delegate void SetTextCallback(string text);                                                             //delegate for the function that is to be called when a message is received from the topic subscriber
 
-        public static int LogggingLevel;                                                                                //what logging level the service has selected
-        public static bool Listening;                                                                                   //is the service listening to non control packets
-        public static bool Sending;                                                                                     //is the service sending packets out to the real world
         private TopicSubscriber MainInputSubsriber;                                                                     //Main subscriber subs to SNP.Inbound
         public static SqlConnectionStringBuilder ENGDBConnection;                                                       //Connection to the ENGDB default db is SNPDb.
         private EMPPackets EMPPackets;                                                                                  //collection of all EMP Packets and functions
         private SNPPackets SNPPackets;                                                                                  //collection of all snp packets and functions
-        private ControlPackets ControlPackets;                                                                          //collection of all Control packets and function
+        private ControlPackets ControlPackets;                                                                          //collection of all Control packets and functions
+        private ChainStretchPackets ChainStretchPackets;                                                                //collection of all Chain Stretch packets and functions
         private List<Disposable> ThingsToDispose;                                                                       //whenever you make something that inherits from IDisposable and needs to be disposed add to this. iterates through at end disposing of items.
-        public static ConcurrentQueue<DiagnosticItem> DiagnosticItems = new ConcurrentQueue<DiagnosticItem>();
+        public static ConcurrentQueue<DiagnosticItem> DiagnosticItems = new ConcurrentQueue<DiagnosticItem>();          //queue for storing Diagnostic Items
+        public static int LogggingLevel;                                                                                //what logging level the service has selected
+        public static bool Listening;                                                                                   //is the service listening to non control packets
+        public static bool Sending;                                                                                     //is the service sending packets out to the real world
         private bool running = false;                                                                                   //controls the diagnostic thread. when false the thread drops through and ends.
         private string SubTopicName;                                                                                    //Topic the Main Subscriber is subbed to
         private string Broker;                                                                                          //IP of the broker we are connecting to
@@ -81,8 +82,8 @@ namespace SNPService
                         DiagnosticItems.TryDequeue(out Result);
                         if (Result.message != "Diagnostic Threading Issue.")
                         {
-                            string DiagnosticMessage = Result.message.Replace(",", ""); ;                               //message to be output to the file                                                                             //add all sorts of diagnostic datas
-                            DiagnosticMessage += ", TimeStamp:" + DateTime.Now.ToString() + ", LoggingLevelNeeded: " + Result.logginglevel.ToString() + ", LoggingLevelSelected" + LogggingLevel.ToString();
+                            string DiagnosticMessage = Result.message.Replace(",", ""); ;                               //message to be output to the File
+                            DiagnosticMessage += ", TimeStamp:" + DateTime.Now.ToString() + ", LoggingLevelNeeded: " + Result.logginglevel.ToString() + ", LoggingLevelSelected" + LogggingLevel.ToString();//add all sorts of diagnostic datas
                             if (Result.logginglevel <= LogggingLevel)                                                   //if we are asking to see this data
                             {
                                 using (StreamWriter DiagnosticWriter = File.AppendText(ConfigurationManager.AppSettings["DiagnosticFile"]))// @"C:\Users\d.paddock\Desktop\Diagnostic.csv")) defualt
@@ -193,6 +194,19 @@ namespace SNPService
 
                             case 3:                                                                                     //Deafen Packet
                                 Task.Run(() => ControlPackets.Deafen(message));
+                                break;
+
+                            default:                                                                                    //UnRecognized Packet
+                                break;
+                        }
+                        break;
+
+                    case 4:                                                                                             //this means its a Control message
+                        switch (Convert.ToInt32(message[1]))                                                            //switch Packet Type
+                        {
+                            //run the procedure in the background dont await as we dont need the return values as it should be void.
+                            case 1:                                                                                     //Index packet
+                                Task.Run(() => ChainStretchPackets.Index(message));
                                 break;
 
                             default:                                                                                    //UnRecognized Packet
@@ -333,6 +347,7 @@ namespace SNPService
                 EMPPackets = new EMPPackets();                                                                          //generate the packet classes
                 SNPPackets = new SNPPackets();
                 ControlPackets = new ControlPackets();
+                ChainStretchPackets = new ChainStretchPackets();
                 ThingsToDispose = new List<Disposable>();                                                               //reset list of objects that need to be disposed
                 Task.Run(() => MQTTConnections());                                                                      //open all MQTT Connections
                 Task.Run(() => SQLConnections());                                                                       //open alll SQL Connections
