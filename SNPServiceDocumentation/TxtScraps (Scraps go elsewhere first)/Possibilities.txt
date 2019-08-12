@@ -1,0 +1,8 @@
+Added a chain stretch packet. in the event that colins application works well there is a packet for createing
+a ChainStretch table if missing and adding data to the table for chainstretch. would allow for running his application easily on other/new lines.
+I made sure to code it in a way that it works for pac or snp lines.
+
+Environmental Monitoring Program
+Allpackets are setup for EMP. if you send it in it will be recorded how you want. i setup an index packet and warning packets.
+
+Hydrometer mesurements for for halogen capsules H1, H3, H7. 

@@ -26,6 +26,7 @@ namespace SNPService
                 password = (EncryptOrDecrypt(Password));                                                    //encrypt it ( just bit flipped every char
             ChangeConfig("ENGDBPassword", password);                                                        //change the password
             ChangeConfig("ResetENGDBPassword", "");                                                         //reset the value of reset password to prevent reseting it next boot.
+            //SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(password, 1));                          //uncomment to log password changes.
         }
 
         /// <summary>
