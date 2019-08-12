@@ -1,4 +1,5 @@
 ﻿using SNPService.Comunications;
+using SNPService.Packets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -207,6 +208,19 @@ namespace SNPService
                             //run the procedure in the background dont await as we dont need the return values as it should be void.
                             case 1:                                                                                     //Index packet
                                 Task.Run(() => ChainStretchPackets.Index(message));
+                                break;
+
+                            default:                                                                                    //UnRecognized Packet
+                                break;
+                        }
+                        break;
+
+                    case 254:                                                                                             //this means its a Control message
+                        switch (Convert.ToInt32(message[1]))                                                            //switch Packet Type
+                        {
+                            //run the procedure in the background dont await as we dont need the return values as it should be void.
+                            case 1:                                                                                     //Index packet
+                                Task.Run(() => GenericPackets.RunSQLCommand(message));
                                 break;
 
                             default:                                                                                    //UnRecognized Packet
