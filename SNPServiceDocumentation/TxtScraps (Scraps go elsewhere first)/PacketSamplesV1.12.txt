@@ -44,5 +44,9 @@ Deafen Packet //packet type 3 packet sent out each index.
      {"ListenBool ": 0}
 
 Chain Stretch Messages
-Index Packet//packet type 1
+Index Packet	//packet type 1
      {"Line": "XS","Head": 1,"Stretch": 1,"Output": 1,"Input": 1}
+
+Generic Messages
+SQLCommandPacket	//packet type 1
+þ     {"Message": "Insert into ChainStretch ([Head],[Stretch],[Timestamp],[B32_Output],[B31_Input]) values (1,1.2,Timestamp,1,0)"}
