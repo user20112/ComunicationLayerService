@@ -92,6 +92,7 @@
     <Compile Include="Packets\ChainStretchPackets.cs" />
     <Compile Include="Packets\ControlPackets.cs" />
     <Compile Include="Packets\EMPPackets.cs" />
+    <Compile Include="Packets\GenericPackets.cs" />
     <Compile Include="SNPService.cs">
       <SubType>Component</SubType>
     </Compile>

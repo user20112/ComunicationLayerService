@@ -18,7 +18,7 @@ namespace SNPService.Packets
         /// <summary>
         /// Records the Chain Stretch information passed to it to the line database in a chainstretch table. if the table doesnt exist yet it generates it.
         /// </summary>
-        public void RunSQLCommand(string message)
+        public static void RunSQLCommand(string message)
         {
             try                                                                                     //try loop in case command fails.
             {
