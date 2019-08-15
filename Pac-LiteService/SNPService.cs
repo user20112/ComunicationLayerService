@@ -287,6 +287,7 @@ namespace SNPService
                 ENGDBConnection.UserID = ENG_DBUserID;                                                                  //and the username
                 ENGDBConnection.Password = ENG_DBPassword;                                                              //password
                 ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;                                                  //and finally the starting database
+                //ENGDBConnection.IntegratedSecurity = true;
             }
             catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                     //logit
         }
