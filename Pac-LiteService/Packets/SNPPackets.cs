@@ -480,7 +480,7 @@ namespace SNPService
                 PacketStringBuilder.Append("<__perform><__eventName><![CDATA[GetWIPMsgs]]></__eventName>"
                     + "</__perform><__execute/><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired />"
                     + "<MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr></__requestData></__service></__InSite>");
-                DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()); //send it and grab the data.
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()), 2)); //send it and grab the data.
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
@@ -515,7 +515,7 @@ namespace SNPService
                     + "</__perform><__requestData><CompletionMsg /><WIPMsgMgr><WIPMsgs><AcknowledgementRequired />"
                     + "<MsgAcknowledged /><MsgText /><PasswordRequired /><WIPMsgDetails /></WIPMsgs></WIPMsgMgr>"
                     + "</__requestData></__service></__InSite>");
-                DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()); //cap it off with the rest of the Hardcoded info and the Machine Name and NAED.
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()), 2)); //cap it off with the rest of the Hardcoded info and the Machine Name and NAED.
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
@@ -672,7 +672,7 @@ namespace SNPService
                 PacketStringBuilder.Append("</user>");
                 PacketStringBuilder.Append("<password __encrypted=\"yes\">" + CamstarPassword + "</password>");
                 PacketStringBuilder.Append("</__connect></__session><__service __serviceType="
-                    + "\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Resource>");
+                    + "\"ResourceSetupTransition\"><__utcOffset><![CDATA[-04:00:00]]></__utcOffset><__inputData><Availability><![CDATA[1]]></Availability><Comments><![CDATA[MReason:" + receivedPacket["MReason"] + " UReason:" + receivedPacket["UReason"] + "]]></Comments><Resource>");
                 PacketStringBuilder.Append("<__name><![CDATA[" + receivedPacket["Machine"] + "]]></__name>");
                 PacketStringBuilder.Append("</Resource><ResourceGroup><__name><![CDATA[]]></__name></ResourceGroup><ResourceStatusCode>");
                 switch (Convert.ToInt32(receivedPacket["StatusCode"]))
@@ -696,7 +696,7 @@ namespace SNPService
                 PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[]]></__name>");
                 PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData >"
                     + "<CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
-                DataReceived = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()), 2));
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }

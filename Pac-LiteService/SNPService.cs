@@ -350,7 +350,7 @@ namespace SNPService
                 }
                 if (ConfigurationManager.AppSettings["ResetCamstarPassword"] != "")                                     //if the camstar password needs to be reset
                 {
-                    Encryptor.UpdateEngDBPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);      //do so
+                    Encryptor.UpdateCamstarPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);      //do so
                 }
                 running = true;                                                                                         //stops diagnostic thread from dropping through until onstop is called.
                 Task.Run(() => DiagnosticThread());                                                                     //start diagnostic thread. ( jsut loops displaying errors.
