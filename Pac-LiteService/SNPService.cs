@@ -138,6 +138,10 @@ namespace SNPService
                                     Task.Run(() => SNPPackets.ProductChangeOverPacket(message));
                                     break;
 
+                                case 5:
+                                    Task.Run(() => SNPPackets.GasAnalyzer(message));
+                                    break;
+
                                 case 252:                                                                               //Delete Machine Packet
                                     Task.Run(() => SNPPackets.DeleteMachinePacket(message));
                                     break;
@@ -288,6 +292,7 @@ namespace SNPService
                 ENGDBConnection.Password = ENG_DBPassword;                                                              //password
                 ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;                                                  //and finally the starting database
                 //ENGDBConnection.IntegratedSecurity = true;
+                //ENGDBConnection.ConnectionString = "Data Source=DBM-HILCSqaENG1;Initial Catalog=SNPDB;Integrated Security=SSPI;User Id= sys_hil-SNP; Password= NotPac@dm1n!;";
             }
             catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                     //logit
         }

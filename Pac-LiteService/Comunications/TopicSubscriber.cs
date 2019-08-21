@@ -33,13 +33,41 @@ namespace SNPService
 
         public void OnMessage(IMessage message)                                                     // whenever we get a message
         {
-            ITextMessage textMessage = message as ITextMessage;                                     //convert message into ITextMessage
-            if (this.OnMessageReceived != null)
+            try
             {
-                this.OnMessageReceived(textMessage.Text);                                           //fire the message to the MessageDelegate
+                ITextMessage textMessage = message as ITextMessage;                                     //convert message into ITextMessage
+                if (this.OnMessageReceived != null)
+                {
+                    this.OnMessageReceived(textMessage.Text);                                           //fire the message to the MessageDelegate
+                }
+            }
+            catch
+            {
+                try
+                {
+                    ActiveMQMessage textMessage = message as ActiveMQMessage;
+                    byte[] data = textMessage.Content;
+                    string Message = "";
+                    for (int x = 0; x < 3; x++)
+                    {
+                        Message += (char)data[x];
+                    }
+                    Message += "     ";
+                    for (int x = 3; x < data.Length; x++)
+                    {
+                        Message += (char)data[x];
+                    }
+                    if (this.OnMessageReceived != null && textMessage != null)
+                    {
+                        this.OnMessageReceived(Message);                                           //fire the message to the MessageDelegate
+                    }
+                }
+                catch
+                {
+
+                }
             }
         }
-
         #region IDisposable Members
 
         public void Dispose()                                                                       //Dispose Everything

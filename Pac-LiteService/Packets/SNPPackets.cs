@@ -377,6 +377,45 @@ namespace SNPService
             SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Short Time Statistic Packet Received!", 3));//logit
             Task.Run(() => CamstarProductChangePacket(message));
         }
+        /// <summary>
+         /// Packet sent When the two sensors are checked for HLine Hydrometer and vacume sensor
+        public void GasAnalyzer(string message)
+        {
+            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Gas Analyzer Packet received", 3));//logit
+            try                                                                                     //try loop in case command fails.
+            {
+                string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;      //Convert json to object
+                StringBuilder sqlStringBuilder = new StringBuilder();
+                sqlStringBuilder.Append("USE [EngDb-" + receivedPacket["Line"] + "] ");            //select database
+                sqlStringBuilder.Append("IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = N'GasAnalyzerData') BEGIN CREATE TABLE [dbo].[GasAnalyzerData] ");
+                sqlStringBuilder.Append("([InternalWaterPercent] [decimal](6, 4) NULL,[InternalPresureReading] [decimal](6, 4) NULL,[ExternalWaterPercent] [decimal](6, 4) NULL,[Timestamp] [datetime2](7) NULL,[Head_number] [int] NULL) ON [PRIMARY] END ");                                                        //start loading the command into the string
+                sqlStringBuilder.Append("delete from [GasAnalyzerData] WHERE Timestamp < DATEADD(DAY, -"+ receivedPacket["DaysToRetain"] .ToString()+ ", GETDATE()) ");                                                        //start loading the command into the string
+                sqlStringBuilder.Append("Insert into GasAnalyzerData ([Head_number],[InternalWaterPercent],[ExternalWaterPercent],[Timestamp],[InternalPresureReading]) values (@Head_number,@InternalWaterPercent,@ExternalWaterPercent,@Timestamp,@InternalPresureReading) ");
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+                {
+                    connection.Open();                                                              //open the connection
+                    using (SqlCommand command = new SqlCommand(sqlStringBuilder.ToString(), connection))
+                    {                                                                               //Comand Time!
+                        command.Parameters.AddWithValue("@Head_number", Convert.ToInt32(receivedPacket["Head_number"]));//replace parameters with values
+                        command.Parameters.AddWithValue("@InternalWaterPercent", float.Parse(receivedPacket["InternalWaterPercent"].ToString()));
+                        command.Parameters.AddWithValue("@ExternalWaterPercent", Convert.ToInt32(receivedPacket["ExternalWaterPercent"]));
+                        command.Parameters.AddWithValue("@InternalPresureReading", Convert.ToInt32(receivedPacket["InternalPresureReading"]));
+                        command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);
+                        int rowsAffected = command.ExecuteNonQuery();                               // execute the command returning number of rows affected
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
+                    }
+                }
+            }
+            catch (Exception ex)                                                                    //catch exceptions
+            {
+                if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if the connection crashed
+                {
+                    SNPService.ReastablishSQL(GasAnalyzer, message);                                      //reastablish it
+                }
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));           //else log the error and move on
+            }
+        }
 
         /// <summary>
         /// SQL section of the Index Summary. saves data to the resource table.
@@ -538,7 +577,7 @@ namespace SNPService
                 string valueSection = "";                                                           // contains the value section of the sql
                 foreach (string key in keys)                                                        //foreach key
                 {
-                    if (key != "Machine")                                                           //except machine as it is used as the table name. and is instead entered as an id
+                    if (key != "Machine"&&key!= "Status")                                       //except machine as it is used as the table name. and is instead entered as an id
                     {
                         keySection += key + ", ";                                                   //Make a key
                         valueSection += "@" + key + ", ";                                           //and value Reference to be replaced later
