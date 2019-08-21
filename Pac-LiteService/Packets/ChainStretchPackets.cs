@@ -28,11 +28,13 @@ namespace SNPService
                 sqlStringBuilder.Append("Insert into ChainStretch ([Head],[Stretch],[Timestamp],[B32_Output],[B31_Input]) values (@Head,@Stretch,@Timestamp,@Output,@Input)");
                 using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
+                    double stretch = 0;
+                    double.TryParse(receivedPacket["Stretch"].ToString(), out stretch);
                     connection.Open();                                                              //open the connection
                     using (SqlCommand command = new SqlCommand(sqlStringBuilder.ToString(), connection))
                     {                                                                               //Comand Time!
                         command.Parameters.AddWithValue("@Head", Convert.ToInt32(receivedPacket["Head"]));//replace parameters with values
-                        command.Parameters.AddWithValue("@Stretch", float.Parse(receivedPacket["Stretch"].ToString()));
+                        command.Parameters.AddWithValue("@Stretch", stretch);
                         command.Parameters.AddWithValue("@Input", Convert.ToInt32(receivedPacket["Input"]) == 1);
                         command.Parameters.AddWithValue("@Output", Convert.ToInt32(receivedPacket["Output"]) == 1);
                         command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);

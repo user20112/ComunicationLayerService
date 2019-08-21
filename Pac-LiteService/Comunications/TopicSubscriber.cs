@@ -64,10 +64,10 @@ namespace SNPService
                 }
                 catch
                 {
-
                 }
             }
         }
+
         #region IDisposable Members
 
         public void Dispose()                                                                       //Dispose Everything

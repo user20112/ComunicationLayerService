@@ -1,20 +1,16 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SNPService.Packets
 {
-    class GenericPackets
+    internal class GenericPackets
     {
-        GenericPackets()
+        private GenericPackets()
         {
-
         }
+
         /// <summary>
         /// Records the Chain Stretch information passed to it to the line database in a chainstretch table. if the table doesnt exist yet it generates it.
         /// </summary>

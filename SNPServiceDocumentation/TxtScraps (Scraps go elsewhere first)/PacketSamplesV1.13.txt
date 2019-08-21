@@ -52,4 +52,4 @@ Index Packet	//packet type 1
 
 Generic Messages
 SQLCommandPacket	//packet type 1
-þ     {"Message": "Insert into ChainStretch ([Head],[Stretch],[Timestamp],[B32_Output],[B31_Input]) values (1,1.2,Timestamp,1,0)"}
+þ     {"Message": "Insert into ChainStretch ([Head],[Stretch],[Timestamp],[B32_Output],[B31_Input]) values (1,1.2,CURRENT_TIMESTAMP,1,0)"}
