@@ -225,6 +225,8 @@ namespace SNPService
                                     break;
                             }
                         }
+                        else                                                                                            //if you are silenced or deafend and receive a packet logit
+                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
                         break;
 
                     case 254:
@@ -244,6 +246,8 @@ namespace SNPService
                                     break;
                             }
                         }
+                        else                                                                                            //if you are silenced or deafend and receive a packet logit
+                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
                         break;
 
                     default:

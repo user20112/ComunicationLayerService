@@ -56,7 +56,7 @@ namespace SNPService.Packets
                 PacketStringBuilder.Append("</user>");
                 PacketStringBuilder.Append("<password __encrypted=\"yes\">" + SNPPackets.CamstarPassword + "</password>");//and password ( already encrypted check where it gets loaded from app config.)
                 PacketStringBuilder.Append("</__connect></__session>");
-                PacketStringBuilder.Append(receivedPacket["Message"]);
+                PacketStringBuilder.Append(receivedPacket["Service"]);
                 PacketStringBuilder.Append("</__InSite>");
                 SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(Sendmessage(SNPPackets.CamstarIP, SNPPackets.CamstarPort, PacketStringBuilder.ToString()), 2)); //send it and grab the data.
             }
