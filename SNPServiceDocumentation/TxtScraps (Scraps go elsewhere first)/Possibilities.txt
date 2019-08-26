@@ -2,11 +2,9 @@ Added a chain stretch packet. in the event that colins application works well th
 a ChainStretch table if missing and adding data to the table for chainstretch. would allow for running his application easily on other/new lines.
 I made sure to code it in a way that it works for pac or snp lines. 
 To use it just send a ChainStretch Packet as seen in Packet Samples with a line that already has an existing database structured like EngDb-(LineName). it will generate the table and insert the value.
-
 Environmental Monitoring Program
 Allpackets are setup for EMP. if you send it in it will be recorded how you want. i setup an index packet and warning packets. Warning Packets are currently pretty pointless.
-
 Hydrometer mesurements for for halogen capsules H1, H3, H7. 
-
-
 Left a generic packet it that allows you to enter a sql command over MQTT. Could run litrally any command on something that can access MQTT. Could be good for PLC's with arbitrary data recording.
+Left a generic packet for Camstar that allows you to run a Camstar service over MQTT with a fire and forget mode rather than a TCP connection.
+Left ChainStretch and Hydrometer Mesurements packets setup in the TestSNPSetup so you can just copy those packets to new machines.
