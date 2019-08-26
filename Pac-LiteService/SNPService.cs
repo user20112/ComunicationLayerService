@@ -41,7 +41,8 @@ namespace SNPService
         private static string ENG_DBPassword;                                                                           //Engineering databse password used to comunicate
         private static string ENG_DBInitialCatalog;                                                                     //Engineering Database that we are talking to
         private static bool fixingconnection = false;                                                                   //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
-
+        private static bool Prod = false;
+        private static TopicPublisher ForwardPublisher;
         #endregion Variable Section
 
         #region Service Section
@@ -110,6 +111,10 @@ namespace SNPService
         {
             try
             {
+                if (Prod)
+                {
+                    Task.Run(() => ForwardPublisher.SendMessage(message));
+                }
                 DiagnosticItems.Enqueue(new DiagnosticItem(message, 4));                                                //log message and bits when it comes in.
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Header =" + Convert.ToInt32(message[0]).ToString(), 3));//log the header
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Type=" + Convert.ToInt32(message[1]).ToString(), 3));//and type
@@ -356,6 +361,15 @@ namespace SNPService
                 if (ConfigurationManager.AppSettings["ResetCamstarPassword"] != "")                                     //if the camstar password needs to be reset
                 {
                     Encryptor.UpdateCamstarPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);      //do so
+                }
+                Prod = ConfigurationManager.AppSettings["IsProd"] == "1";
+                try
+                {
+                    ForwardPublisher = new TopicPublisher(ConfigurationManager.AppSettings["ForwardTopic"], Broker);
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
                 running = true;                                                                                         //stops diagnostic thread from dropping through until onstop is called.
                 Task.Run(() => DiagnosticThread());                                                                     //start diagnostic thread. ( jsut loops displaying errors.
