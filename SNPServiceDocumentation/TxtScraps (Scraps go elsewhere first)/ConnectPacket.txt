@@ -1,1 +1,1 @@
-<__InSite __encryption="2" __version="1.1"><__session><__connect><user><__name>d.paddock</__name></user><password __encrypted="no">Arcturusmengsk!2</password></__connect></__session></__InSite>
+<__InSite __encryption="2" __version="1.1"><__session><__connect><user><__name>d.paddock</__name></user><password __encrypted="no">Thisisapassword/password></__connect></__session></__InSite>
