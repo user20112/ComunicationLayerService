@@ -28,11 +28,11 @@ namespace SNPService
         //private string MDEIP;                                                                 // currently my ip for MDEing. once it is known to be working i have to get this ip from gerry.
         //private int MDEClientPort;                                                            // depreciated used to comunicate to MDE over UDP ( the receiveing port of MDE
         //public int MDEOutPort;                                                                // depreciated used to comunicate to MDE over UDP ( the sending port to MDE
-        private string CamstarUsername;                                                         // username used to comunicate with camstar
+        public static string CamstarUsername;                                                         // username used to comunicate with camstar
 
-        private string CamstarPassword;                                                         // password used to ocmunicate with camstar
-        private string CamstarIP;                                                               // IP of the Camstar System you are talking to
-        private int CamstarPort;                                                                // Port of the Camstar system you are talking to
+        public static string CamstarPassword;                                                         // password used to ocmunicate with camstar
+        public static string CamstarIP;                                                               // IP of the Camstar System you are talking to
+        public static int CamstarPort;                                                                // Port of the Camstar system you are talking to
 
         public SNPPackets()
         {
@@ -865,7 +865,7 @@ namespace SNPService
         /// <summary>
         /// Send message To Camstar and listen for a message back.
         /// </summary>
-        private string Sendmessage(string host, int port, string content)
+        public string Sendmessage(string host, int port, string content)
         {
             ServerConnection connection = new ServerConnection();
             //create a server connection

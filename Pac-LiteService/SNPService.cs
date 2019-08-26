@@ -233,8 +233,11 @@ namespace SNPService
                             switch (Convert.ToInt32(message[1]))                                                            //switch Packet Type
                             {
                                 //run the procedure in the background dont await as we dont need the return values as it should be void.
-                                case 1:                                                                                     //Index packet
+                                case 1:                                                                                     //SQL Command
                                     Task.Run(() => GenericPackets.RunSQLCommand(message));
+                                    break;
+                                case 2:                                                                                     //Camstar Service
+                                    Task.Run(() => GenericPackets.RunCamstarService(message));
                                     break;
 
                                 default:                                                                                    //UnRecognized Packet

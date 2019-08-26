@@ -1,7 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using Camstar.Utility;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Data.SqlClient;
+using System.Text;
+using System.Xml.Linq;
 
 namespace SNPService.Packets
 {
@@ -38,6 +41,51 @@ namespace SNPService.Packets
                     SNPService.ReastablishSQL(RunSQLCommand, message);                                      //reastablish it
                 }
                 SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));           //else log the error and move on
+            }
+        }
+        public static void RunCamstarService(string message)
+        {
+            string DataReceived;
+            try
+            {
+                string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.
+                JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;
+                StringBuilder PacketStringBuilder = new StringBuilder();
+                PacketStringBuilder.Append("<__InSite __encryption=\"2\" __version=\"1.1\"><__session><__connect><user>");//load in start of connection string
+                PacketStringBuilder.Append("<__name>" + SNPPackets.CamstarUsername + "</__name>");             //load in the username
+                PacketStringBuilder.Append("</user>");
+                PacketStringBuilder.Append("<password __encrypted=\"yes\">" + SNPPackets.CamstarPassword + "</password>");//and password ( already encrypted check where it gets loaded from app config.)
+                PacketStringBuilder.Append("</__connect></__session>");
+                PacketStringBuilder.Append(receivedPacket["Message"]);
+                PacketStringBuilder.Append("</__InSite>");
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(Sendmessage(SNPPackets.CamstarIP, SNPPackets.CamstarPort, PacketStringBuilder.ToString()), 2)); //send it and grab the data.
+            }
+            catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
+        }
+        public static string Sendmessage(string host, int port, string content)
+        {
+            ServerConnection connection = new ServerConnection();
+            //create a server connection
+            try
+            {
+                var connected = connection.Connect(host, port);                                     // try connecting on the host and port passed in
+                if (!connected) return "";                                                          // return nothing if cant connect
+                connection.Send(content);                                                           // send data
+                connection.Receive(out var result);                                                 // reviece message from server, and store into variable
+                connection.Disconnect();                                                            // Close connection
+                try
+                {
+                    return XDocument.Parse(result).ToString();                                      // format recieved message into xml
+                }
+                catch
+                {
+                    return result;                                                                  // if formatting fails just send unformatted back
+                }
+            }
+            catch (Exception ex)                                                                    // If an error occurred return null string
+            {
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));           //logit
+                return "";                                                                          //return null string
             }
         }
     }
