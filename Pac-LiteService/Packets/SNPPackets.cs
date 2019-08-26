@@ -742,7 +742,8 @@ namespace SNPService
                 PacketStringBuilder.Append("</ResourceStatusCode><ResourceStatusReason><__name><![CDATA[]]></__name>");
                 PacketStringBuilder.Append("</ResourceStatusReason></__inputData ><__execute /><__requestData >"
                     + "<CompletionMsg /><ACEMessage /><ACEStatus /></__requestData ></__service ></__InSite >");
-                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString()), 2));
+                string temp = Sendmessage(CamstarIP, CamstarPort, PacketStringBuilder.ToString());
+                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(temp, 2));
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }

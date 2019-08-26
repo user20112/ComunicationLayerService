@@ -38,7 +38,7 @@ Warning Packet //packet type 2 records a warning coming from the EMP system. ( s
 
 Control Messages
 LoggingLevel Packet//packet type 1
-     {"LoggingLevel": 5}
+     {"LoggingLevel": 1}
 
 Silence Packet//packet type 2 0 down 1 pm 2 running
      {"SendBool ": 0}

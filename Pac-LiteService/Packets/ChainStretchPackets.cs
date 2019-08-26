@@ -40,7 +40,7 @@ namespace SNPService
                         command.Parameters.AddWithValue("@TimeStamp", DateTime.Now);
                         int rowsAffected = command.ExecuteNonQuery();                               // execute the command returning number of rows affected
                         SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
-                    }
+                    } 
                 }
             }
             catch (Exception ex)                                                                    //catch exceptions
