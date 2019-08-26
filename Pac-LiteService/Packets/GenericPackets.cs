@@ -43,6 +43,7 @@ namespace SNPService.Packets
                 SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));           //else log the error and move on
             }
         }
+
         public static void RunCamstarService(string message)
         {
             string DataReceived;
@@ -62,6 +63,7 @@ namespace SNPService.Packets
             }
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
+
         public static string Sendmessage(string host, int port, string content)
         {
             ServerConnection connection = new ServerConnection();
