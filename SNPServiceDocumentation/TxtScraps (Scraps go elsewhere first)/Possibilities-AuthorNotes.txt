@@ -1,0 +1,11 @@
+Unused Posibilities.
+Added a chain stretch packet. in the event that colins application works well there is a packet for createing a ChainStretch table if missing and adding data to the table for chainstretch. would allow for running his application easily on other/new lines.This will work for both SNP and MDE/Pac Lines To use it just send a ChainStretch Packet as seen in Packet Samples with a line that already has an existing database structured like EngDb-(LineName). it will generate the table and insert the value.
+Environmental Monitoring Program
+All packets are setup for EMP. if you send it in it will be recorded how you want. i setup an index packet and warning packets. Warning Packets are currently pretty pointless. (just recorded to SQL like the index packets.
+All packets you should need for Hydrometer mesurements for H lines are implemented in the PLC and service. You just have to add the values and send the packets.
+Left a generic packet it that allows you to enter a sql command over MQTT or UDP. Could run litrally any command on something that can access MQTT or UDP. Could be good for PLC's with arbitrary data recording.
+Left a generic packet for Camstar that allows you to run a Camstar service over MQTTor UDP with a fire and forget mode rather than a TCP connection.
+Inside the App Config you can Enable UDPListening. This will allow you to feed the service over the UDP Port you configure. this may help hookup different applications to this if you end up wanting to ( SQL Commands over UDP could be nice.)
+
+Author Notes
+This place needs as much standardization as possible. If something can be routed through this service rather than createing another one i made it as easy as possible to add applications and packets to this weather or not they use the same payload encoding scheme.

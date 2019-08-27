@@ -14,7 +14,7 @@ namespace SNPService
             Dictionary<int, Action<string>> ChainStretchDictionary = new Dictionary<int, Action<string>>();
             ChainStretchDictionary.Add(1, (Action<string>)Index);
 
-            SNPService.Packets.Add(4,ChainStretchDictionary);
+            SNPService.Packets.Add(4, ChainStretchDictionary);
         }
 
         /// <summary>

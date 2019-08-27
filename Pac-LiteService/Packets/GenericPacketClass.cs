@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SNPService.Packets
 {
-    class GenericPacketClass
+    internal class GenericPacketClass
     {
         public GenericPacketClass()
         {
@@ -15,6 +12,7 @@ namespace SNPService.Packets
             //add the above line for each packet you create.
             SNPService.Packets.Add(1, GenericPacketClassDictionary);//this should be your ApplicationID and name
         }
+
         public void Packet1(string message)
         {
             //do whatever you want with the packet.

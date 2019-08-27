@@ -1,5 +1,4 @@
 ﻿using SNPService.Comunications;
-using SNPService.Packets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -45,6 +44,7 @@ namespace SNPService
         private int UDPPort;                                                                                            //port to listen on
         private bool UDPEnabled;
         public static Dictionary<int, Dictionary<int, Action<string>>> Packets;
+
         #endregion Variable Section
 
         #region Service Section
@@ -304,6 +304,7 @@ namespace SNPService
                 DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                          //logem
             }
         }
+
         private void InstantiatePacketClasses()
         {
             EMPPackets = new EMPPackets();                                                                          //generate the packet classes
