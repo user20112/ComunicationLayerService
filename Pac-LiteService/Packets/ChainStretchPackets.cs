@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Text;
 
@@ -10,6 +11,10 @@ namespace SNPService
     {
         public ChainStretchPackets()
         {
+            Dictionary<int, Action<string>> ChainStretchDictionary = new Dictionary<int, Action<string>>();
+            ChainStretchDictionary.Add(1, (Action<string>)Index);
+
+            SNPService.Packets.Add(4,ChainStretchDictionary);
         }
 
         /// <summary>

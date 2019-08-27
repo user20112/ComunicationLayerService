@@ -44,6 +44,7 @@ namespace SNPService
         private UDPListener uDPListener;                                                                                //listens for packets on the UDP Port
         private int UDPPort;                                                                                            //port to listen on
         private bool UDPEnabled;
+        public static Dictionary<int, Dictionary<int, Action<string>>> Packets;
         #endregion Variable Section
 
         #region Service Section
@@ -116,139 +117,27 @@ namespace SNPService
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Header =" + Convert.ToInt32(message[0]).ToString(), 3));//log the header
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Type=" + Convert.ToInt32(message[1]).ToString(), 3));//and type
                 DiagnosticItems.Enqueue(new DiagnosticItem("SNPID=" + Convert.ToInt32(message[2]).ToString(), 3));      //and SNP ID
-                switch (Convert.ToInt32(message[0]))                                                                    //switch packet header
+                Action<string> actionCall;
+                Dictionary<int, Action<string>> IntermediaryDictionary;
+                if (Packets.TryGetValue(Convert.ToInt32(message[0]), out IntermediaryDictionary))
                 {
-                    case 1:                                                                                             //this means its a SNP message
-                        if (Listening && Sending)
+                    if (IntermediaryDictionary.TryGetValue(Convert.ToInt32(message[1]), out actionCall))
+                    {
+                        if (Listening && Sending && Convert.ToInt32(message[1]) != 3)//if we are listening and sending and this isnt a control packet.
                         {
-                            switch (Convert.ToInt32(message[1]))                                                        //switch Packet Type
-                            {
-                                //run the procedure in the background dont await as we dont need the return values as it should be void.
-                                case 1:                                                                                 //Index Summary Packet
-                                    Task.Run(() => SNPPackets.IndexSummaryPacket(message));
-                                    break;
-
-                                case 2:                                                                                 //Downtime Packet
-                                    Task.Run(() => SNPPackets.DowntimePacket(message));
-                                    break;
-
-                                case 3:                                                                                 //Short Time Statistics  Packet
-                                    Task.Run(() => SNPPackets.ShortTimeStatisticPacket(message));
-                                    break;
-
-                                case 4:                                                                                 //Product Changeover Packet
-                                    Task.Run(() => SNPPackets.ProductChangeOverPacket(message));
-                                    break;
-
-                                case 5:
-                                    Task.Run(() => SNPPackets.GasAnalyzer(message));
-                                    break;
-
-                                case 252:                                                                               //Delete Machine Packet
-                                    Task.Run(() => SNPPackets.DeleteMachinePacket(message));
-                                    break;
-
-                                case 253:                                                                               //Edit Machine Packet
-                                    Task.Run(() => SNPPackets.EditMachinePacket(message));
-                                    break;
-
-                                case 254:                                                                               //New Machine Packet
-                                    Task.Run(() => SNPPackets.NewMachinePacket(message));
-                                    Thread.Sleep(100);
-                                    break;
-
-                                default:                                                                                //Unrecognized  Packet
-                                    break;
-                            }
+                            actionCall(message);
                         }
                         else                                                                                            //if you are silenced and receive a message log it
                             DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
-                        break;
-
-                    case 2:                                                                                             //this means its an EMP message
-                        if (Listening && Sending)
-                        {
-                            switch (Convert.ToInt32(message[1]))                                                        //switch Packet Type
-                            {
-                                //run the procedure in the background dont await as we dont need the return values as it should be void.
-                                case 1:
-                                    Task.Run(() => EMPPackets.IndexPacket(message));                                    //Index  Packet
-                                    break;
-
-                                case 2:
-                                    Task.Run(() => EMPPackets.WarningPacket(message));                                  //Warning  Packet
-                                    break;
-
-                                default:                                                                                //UnRecognized Packet
-                                    break;
-                            }
-                        }
-                        else                                                                                            //if you are silenced or deafend and receive a packet logit
-                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
-                        break;
-
-                    case 3:                                                                                             //this means its a Control message
-                        switch (Convert.ToInt32(message[1]))                                                            //switch Packet Type
-                        {
-                            //run the procedure in the background dont await as we dont need the return values as it should be void.
-                            case 1:                                                                                     //Logging Level Packet
-                                Task.Run(() => ControlPackets.LoggingLevel(message));
-                                break;
-                            //Silence Packet
-                            case 2:
-                                Task.Run(() => ControlPackets.Silence(message));
-                                break;
-
-                            case 3:                                                                                     //Deafen Packet
-                                Task.Run(() => ControlPackets.Deafen(message));
-                                break;
-
-                            default:                                                                                    //UnRecognized Packet
-                                break;
-                        }
-                        break;
-
-                    case 4:
-                        if (Listening && Sending)
-                        {                                                                                           //this means its a Control message
-                            switch (Convert.ToInt32(message[1]))                                                            //switch Packet Type
-                            {
-                                //run the procedure in the background dont await as we dont need the return values as it should be void.
-                                case 1:                                                                                     //Index packet
-                                    Task.Run(() => ChainStretchPackets.Index(message));
-                                    break;
-
-                                default:                                                                                    //UnRecognized Packet
-                                    break;
-                            }
-                        }
-                        else                                                                                            //if you are silenced or deafend and receive a packet logit
-                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
-                        break;
-
-                    case 254:
-                        if (Listening && Sending)
-                        {                                                                                       //this means its a Control message
-                            switch (Convert.ToInt32(message[1]))                                                            //switch Packet Type
-                            {
-                                //run the procedure in the background dont await as we dont need the return values as it should be void.
-                                case 1:                                                                                     //SQL Command
-                                    Task.Run(() => GenericPackets.RunSQLCommand(message));
-                                    break;
-                                case 2:                                                                                     //Camstar Service
-                                    Task.Run(() => GenericPackets.RunCamstarService(message));
-                                    break;
-
-                                default:                                                                                    //UnRecognized Packet
-                                    break;
-                            }
-                        }
-                        else                                                                                            //if you are silenced or deafend and receive a packet logit
-                            DiagnosticItems.Enqueue(new DiagnosticItem("Received a packet But I am either not sending or Listening!", 2));
-                        break;
-
-                    default:
-                        break;
+                    }
+                    else
+                    {
+                        //you hit here if you havent setup your function as part of the dictionary.
+                    }
+                }
+                else
+                {
+                    //you hit here if you havent setup your application as part of the Dictionary.
                 }
             }
             catch (Exception ex)                                                                                        //catch exceptions
@@ -309,7 +198,7 @@ namespace SNPService
         /// <summary>
         /// Collection of TCP Connection setup
         /// </summary>
-        private void TCPConnections()                                                                                  
+        private void TCPConnections()
         {
         }
 
@@ -367,6 +256,7 @@ namespace SNPService
         /// </summary>
         private void CallOnStart()
         {
+            Packets = new Dictionary<int, Dictionary<int, Action<string>>>();
             try
             {
                 if (ConfigurationManager.AppSettings["ResetENGDBPassword"] != "")                                       //if the reset engineering password needs to be reset
@@ -402,10 +292,7 @@ namespace SNPService
                 {
                     DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
-                EMPPackets = new EMPPackets();                                                                          //generate the packet classes
-                SNPPackets = new SNPPackets();
-                ControlPackets = new ControlPackets();
-                ChainStretchPackets = new ChainStretchPackets();
+                InstantiatePacketClasses();                                                                             //setup the packet classes.
                 ThingsToDispose = new List<Disposable>();                                                               //reset list of objects that need to be disposed
                 Task.Run(() => MQTTConnections());                                                                      //open all MQTT Connections
                 Task.Run(() => SQLConnections());                                                                       //open alll SQL Connections
@@ -416,6 +303,13 @@ namespace SNPService
             {
                 DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                          //logem
             }
+        }
+        private void InstantiatePacketClasses()
+        {
+            EMPPackets = new EMPPackets();                                                                          //generate the packet classes
+            SNPPackets = new SNPPackets();
+            ControlPackets = new ControlPackets();
+            ChainStretchPackets = new ChainStretchPackets();
         }
 
         /// <summary>

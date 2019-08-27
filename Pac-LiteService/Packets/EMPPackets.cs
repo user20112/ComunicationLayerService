@@ -19,6 +19,10 @@ namespace SNPService
 
         public EMPPackets()
         {
+            Dictionary<int, Action<string>> EMPDictionary = new Dictionary<int, Action<string>>();
+            EMPDictionary.Add(1, (Action<string>)IndexPacket);
+            EMPDictionary.Add(2, (Action<string>)WarningPacket);
+            SNPService.Packets.Add(2, EMPDictionary);
         }
 
         #endregion Variable Section

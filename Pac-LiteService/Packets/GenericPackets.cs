@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Text;
 using System.Xml.Linq;
@@ -12,6 +13,10 @@ namespace SNPService.Packets
     {
         private GenericPackets()
         {
+            Dictionary<int, Action<string>> GenericDictionary = new Dictionary<int, Action<string>>();
+            GenericDictionary.Add(1, (Action<string>)RunSQLCommand);
+            GenericDictionary.Add(2, (Action<string>)RunCamstarService);
+            SNPService.Packets.Add(254, GenericDictionary);
         }
 
         /// <summary>

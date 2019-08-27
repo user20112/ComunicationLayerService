@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace SNPService
@@ -9,6 +10,11 @@ namespace SNPService
     {
         public ControlPackets()
         {
+            Dictionary<int, Action<string>> ControlDictionary = new Dictionary<int, Action<string>>();
+            ControlDictionary.Add(1, (Action<string>)LoggingLevel);
+            ControlDictionary.Add(2, (Action<string>)Silence);
+            ControlDictionary.Add(3, (Action<string>)Deafen);
+            SNPService.Packets.Add(3, ControlDictionary);
         }
 
         /// <summary>

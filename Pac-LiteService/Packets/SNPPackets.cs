@@ -43,6 +43,16 @@ namespace SNPService
             //MDEIP = ConfigurationManager.AppSettings["MDEIP"];                                //and MDE Ip deprecieted as MDE is no longer used
             //MDEClientPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEClientPort"]);//and MDE Ports deprecieted as mde is no longer used
             //MDEOutPort = Convert.ToInt32(ConfigurationManager.AppSettings["MDEOutPort"]);     //from app.config
+            Dictionary<int, Action<string>> SNPDictionary = new Dictionary<int, Action<string>>();
+            SNPDictionary.Add(1, (Action<string>)IndexSummaryPacket);
+            SNPDictionary.Add(2, (Action<string>)DowntimePacket);
+            SNPDictionary.Add(3, (Action<string>)ShortTimeStatisticPacket);
+            SNPDictionary.Add(4, (Action<string>)ProductChangeOverPacket);
+            SNPDictionary.Add(5, (Action<string>)GasAnalyzer);
+            SNPDictionary.Add(252, (Action<string>)DeleteMachinePacket);
+            SNPDictionary.Add(253, (Action<string>)EditMachinePacket);
+            SNPDictionary.Add(254, (Action<string>)NewMachinePacket);
+            SNPService.Packets.Add(1, SNPDictionary);
         }
 
         #endregion Variable Section
