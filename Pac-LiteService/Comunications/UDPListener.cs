@@ -1,19 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SNPService.Comunications
 {
-    class UDPListener
+    internal class UDPListener
     {
-        UdpClient receivingUdpClient;                                                               //udp client for recieving messages
-        int Port;                                                                                   //port to listen on
+        private UdpClient receivingUdpClient;                                                               //udp client for recieving messages
+        private int Port;                                                                                   //port to listen on
+
         public event MessageReceivedDelegate OnMessageReceived;                                     //callback delegate for whenever we receive a message
-        IPEndPoint RemoteIpEndPoint;                                                                //accept from any ip and port.
+
+        private IPEndPoint RemoteIpEndPoint;                                                                //accept from any ip and port.
 
         public UDPListener(int port)
         {
@@ -23,6 +21,7 @@ namespace SNPService.Comunications
 
             Task.Run(() => ListenLoop());
         }
+
         private void ListenLoop()
         {
             while (SNPService.running)                                                              //while we are running

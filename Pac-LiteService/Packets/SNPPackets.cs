@@ -646,50 +646,52 @@ namespace SNPService
             {
                 string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.
                 JObject receivedPacket = JsonConvert.DeserializeObject(jsonString) as JObject;      //convert json to jobjectif (Convert.ToInt32(receivedPacket["Status"]))
-                if (!(Convert.ToInt32(receivedPacket["StatusCode"]) == 0))
+                Line line = LoadResources(receivedPacket["Machine"].ToString());                //generate a line from the machine name
+                StringBuilder sqlStringBuilder = new StringBuilder();                           //create a string builder to make the sql string
+                string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());      //Grabs Machine in [0] and line in [1]
+                sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
+                sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,"
+                + "ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
+                string SQLString = sqlStringBuilder.ToString();                                 //convert Builder to string
+                string ResourceId = GerResourceID(receivedPacket["Machine"].ToString());
+                string ProductID = GetProductId(receivedPacket["NAED"].ToString());
+                int Thru = GetOutTheo(receivedPacket["NAED"].ToString(), line);
+                int Goal = GetOutGoal(receivedPacket["NAED"].ToString(), line);
+                //int Goal = Convert.ToInt32(GetTheo(receivedPacket["Machine"].ToString(), temp[1]));
+                using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
                 {
-                    Line line = LoadResources(receivedPacket["Machine"].ToString());                //generate a line from the machine name
-                    StringBuilder sqlStringBuilder = new StringBuilder();                           //create a string builder to make the sql string
-                    string[] temp = GetMachineIDAndLine(receivedPacket["Machine"].ToString());      //Grabs Machine in [0] and line in [1]
-                    sqlStringBuilder.Append(" USE [" + ConfigurationManager.AppSettings["QRQCDatabase"] + "] ");//select database
-                    sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,"
-                    + "ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
-                    string SQLString = sqlStringBuilder.ToString();                                 //convert Builder to string
-                    string ResourceId = GerResourceID(receivedPacket["Machine"].ToString());
-                    string ProductID = GetProductId(receivedPacket["NAED"].ToString());
-                    int Thru = GetOutTheo(receivedPacket["NAED"].ToString(), line);
-                    int Goal = GetOutGoal(receivedPacket["NAED"].ToString(), line);
-                    using (SqlConnection connection = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
+                    connection.Open();                                                          //open the connection
+                    using (SqlCommand command = new SqlCommand(SQLString, connection))
                     {
-                        connection.Open();                                                          //open the connection
-                        using (SqlCommand command = new SqlCommand(SQLString, connection))
+                        HolderTime = DateTime.Now;                                              //Command Time!
+                        command.Parameters.AddWithValue("@StatusBegin", HolderTime);            //add a timestamp
+                        command.Parameters.AddWithValue("@ResourceID", ResourceId);             //add rest of values
+                        switch (Convert.ToInt32(receivedPacket["StatusCode"]))                  //convert status id to QRQC Status ID
                         {
-                            HolderTime = DateTime.Now;                                              //Command Time!
-                            command.Parameters.AddWithValue("@StatusBegin", HolderTime);            //add a timestamp
-                            command.Parameters.AddWithValue("@ResourceID", ResourceId);             //add rest of values
-                            switch (Convert.ToInt32(receivedPacket["StatusCode"]))                  //convert status id to QRQC Status ID
-                            {
-                                case 1://scheduled
-                                    command.Parameters.AddWithValue("@StatusID", 2);
-                                    break;
+                            case 0://Unscheduled
+                                command.Parameters.AddWithValue("@StatusID", 0);
+                                break;
 
-                                case 2://Running
-                                    command.Parameters.AddWithValue("@StatusID", 0);
-                                    break;
+                            case 1://scheduled
+                                command.Parameters.AddWithValue("@StatusID", 2);
+                                break;
 
-                                case 3://PM
-                                    command.Parameters.AddWithValue("@StatusID", 1);
-                                    break;
-                            }
-                            command.Parameters.AddWithValue("@ProductID", ProductID);
-                            command.Parameters.AddWithValue("@Thru", Thru);
-                            command.Parameters.AddWithValue("@Goal", Goal);
-                            int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
-                            SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
+                            case 2://Running
+                                command.Parameters.AddWithValue("@StatusID", 0);
+                                break;
+
+                            case 3://PM
+                                command.Parameters.AddWithValue("@StatusID", 1);
+                                break;
                         }
-                        UpdateQRQC(new Instructions(false, HolderTime, line));
-                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Changed QRQC Status", 2));
+                        command.Parameters.AddWithValue("@ProductID", ProductID);
+                        command.Parameters.AddWithValue("@Thru", Thru);
+                        command.Parameters.AddWithValue("@Goal", Goal);
+                        int rowsAffected = command.ExecuteNonQuery();                           //execute the command returning number of rows affected
+                        SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(rowsAffected + " row(s) inserted", 2));//logit
                     }
+                    UpdateQRQC(new Instructions(false, HolderTime, line));
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Changed QRQC Status", 2));
                 }
             }
             catch (Exception ex)                                                                    //catch exceptions
@@ -728,7 +730,7 @@ namespace SNPService
                         break;
 
                     case 1:
-                        PacketStringBuilder.Append("<__name><![CDATA[Scheduled]></__name>");        //Scheduled downtime
+                        PacketStringBuilder.Append("<__name><![CDATA[Scheduled]]></__name>");        //Scheduled downtime
                         break;
 
                     case 2:
@@ -1066,6 +1068,7 @@ namespace SNPService
         {
         }
 
+        //Below is QRQC Code. AnyChanges i made broke it so im not happy with what it looks like but im not sure how to fix it...
         public static void UpdateQRQC(Instructions i)
         {
             try
@@ -1127,6 +1130,62 @@ namespace SNPService
             return ProductFamilyId;                                                                 //were done!
         }
 
+        public int GetOutTheo(string ProductName, Line Line) //gets hour theoretical/thru of product/family/line in that order of importance
+        {
+            double t = 0; //we'll call this a timespan for now
+
+            string speedTable = ConfigurationManager.AppSettings["speedTable"];
+
+            string query = "SELECT * FROM " + speedTable + " WHERE ResourceName='" + Line.DisplayName + "' AND ProductId='" + GetProductId(ProductName) + "'";
+
+            using (SqlConnection con = new SqlConnection())
+            {
+                con.ConnectionString = ConfigurationManager.AppSettings["QRQCConnectionString"];
+                con.Open();
+                try
+                {
+                    SqlCommand command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        t = reader.GetDouble(4);
+                    }
+                    else
+                    {
+                        reader.Close();
+                        query = "SELECT * FROM " + speedTable + " WHERE ResourceName='" + Line.DisplayName + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
+                        SqlCommand command2 = new SqlCommand(query, con);
+                        SqlDataReader reader2 = command2.ExecuteReader();
+                        if (reader2.HasRows)
+                        {
+                            reader2.Read();
+                            t = reader2.GetDouble(4);
+                        }
+                        else
+                        {
+                            reader2.Close();
+                            query = "SELECT * FROM " + speedTable + "WHERE ResourceName='" + Line.DisplayName + "'";
+                            SqlCommand command3 = new SqlCommand(query, con);
+                            SqlDataReader reader3 = command3.ExecuteReader();
+                            if (reader3.HasRows)
+                            {
+                                reader3.Read();
+                                t = reader3.GetDouble(4);
+                                reader3.Close();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+
+            return Convert.ToInt32(t);
+        }
+
         public string GetProductId(string ProductName)
         {
             string id = "";                                                                         //initialize empty
@@ -1157,72 +1216,60 @@ namespace SNPService
             return id;
         }
 
-        public int GetOutGoal(string ProductName, Line Line)                                        //gets goal of product/family/line in that order of importance
+        public int GetOutGoal(string ProductName, Line Line) //gets goal of product/family/line in that order of importance
         {
-            double t = 0;                                                                           //we'll call this a timespan for now
-            string speedTable = ConfigurationManager.AppSettings["speedTable"];
-            string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";
-            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))
-            {
-                con.Open();                                                                         //open the connection
-                try
-                {
-                    using (SqlCommand command = new SqlCommand(query, con))                         // create a command out o f the query and connnection
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())                      //execute the command
-                        {
-                            if (reader.HasRows)                                                     //and read the results
-                            {
-                                reader.Read();
-                                t = reader.GetDouble(3);
-                            }
-                            else                                                                    //if there are no results logit and return 0
-                            {
-                                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("Product ID Not Found for QRQC Message", 1));
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
-                }
-            }
-            return Convert.ToInt32(t);
-        }
+            double t = 0;
 
-        public int GetOutTheo(string ProductName, Line Line)                                            //gets hour theoretical/thru of product/family/line in that order of importance
-        {
-            double Theo = 0;                                                                            //stores the return value
-            string speedTable = ConfigurationManager.AppSettings["speedTable"];                         //table storing production speeds.
-            string query = "SELECT * FROM " + speedTable + " WHERE ResourceID='" + Line.Name + "' AND ProductId='" + GetProductId(ProductName) + "'";//qiuery for getting production speeds from Line Nmae and product id
-            using (SqlConnection con = new SqlConnection(SNPService.ENGDBConnection.ConnectionString))  //conection to EngDB
+            string speedTable = System.Configuration.ConfigurationManager.AppSettings["speedTable"];
+
+            string query = "SELECT * FROM " + speedTable + " WHERE ResourceName='" + Line.DisplayName + "' AND ProductId='" + GetProductId(ProductName) + "'";
+
+            using (SqlConnection con = new SqlConnection())
             {
-                con.Open();                                                                             //open the connection
+                con.ConnectionString = ConfigurationManager.AppSettings["QRQCConnectionString"];
+                con.Open();
                 try
                 {
-                    using (SqlCommand command = new SqlCommand(query, con))                             //create a command from the query and connection
+                    SqlCommand command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (reader.HasRows)
                     {
-                        using (SqlDataReader reader = command.ExecuteReader())                          //execute the command and read the values returned
+                        reader.Read();
+                        t = reader.GetDouble(3);
+                    }
+                    else
+                    {
+                        reader.Close();
+                        query = "SELECT * FROM " + speedTable + " WHERE ResourceName='" + Line.DisplayName + "' AND ProductFamilyId='" + GetProductFamilyId(ProductName) + "'";
+                        SqlCommand command2 = new SqlCommand(query, con);
+                        SqlDataReader reader2 = command2.ExecuteReader();
+                        if (reader2.HasRows)
                         {
-                            if (reader.HasRows)
+                            reader2.Read();
+                            t = reader2.GetDouble(3);
+                        }
+                        else
+                        {
+                            reader2.Close();
+                            query = "SELECT * FROM " + speedTable + "WHERE ResourceName='" + Line.DisplayName + "'";
+                            SqlCommand command3 = new SqlCommand(query, con);
+                            SqlDataReader reader3 = command3.ExecuteReader();
+                            if (reader3.HasRows)
                             {
-                                reader.Read();
-                                Theo = reader.GetDouble(4);
-                            }
-                            else
-                            {
-                                SNPService.DiagnosticItems.Enqueue(new DiagnosticItem("ID not found when sending QRQC Message", 1));//if its not found logit.
+                                reader3.Read();
+                                t = reader3.GetDouble(3);
+                                reader3.Close();
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));           //Log any errors
                 }
             }
-            return Convert.ToInt32(Theo);                                                               //return the value grabed
+
+            return Convert.ToInt32(t);
         }
 
         public string GerResourceID(string ResourceName)
