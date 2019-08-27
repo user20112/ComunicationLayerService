@@ -663,7 +663,7 @@ namespace SNPService
                 sqlStringBuilder.Append("INSERT INTO [QRQC_Detail] (ResourceID,StatusID,StatusBegin,"
                 + "ProductID,Thru,Goal) values (@ResourceID , @StatusID , @StatusBegin , @ProductID , @Thru , @Goal)");//start loading the SQL Command
                 string SQLString = sqlStringBuilder.ToString();                                 //convert Builder to string
-                string ResourceId = GerResourceID(receivedPacket["Machine"].ToString());
+                string ResourceId = GetResourceID(receivedPacket["Machine"].ToString());
                 string ProductID = GetProductId(receivedPacket["NAED"].ToString());
                 int Thru = GetOutTheo(receivedPacket["NAED"].ToString(), line);
                 int Goal = GetOutGoal(receivedPacket["NAED"].ToString(), line);
@@ -1067,19 +1067,15 @@ namespace SNPService
             {
                 if (ex.Message.Contains("ExecuteNonQuery requires an open and available Connection."))//if connection crashed
                 {
-                    SNPService.ReastablishSQL(DoNothing, machine);                                  //reestablish it
+                    SNPService.ReastablishSQL(SNPService.DoNothing, machine);                                  //reestablish it
                     return LoadResources(machine);
                 }
                 return null;
             }
         }
 
-        public void DoNothing(string Message)                                                       //used in place of the callback delegate for when you are ok with not calling the function after restablishing the Connection
-        {
-        }
-
         //Below is QRQC Code. AnyChanges i made broke it so im not happy with what it looks like but im not sure how to fix it...
-        public static void UpdateQRQC(Instructions i)
+        public void UpdateQRQC(Instructions i)
         {
             try
             {
@@ -1282,7 +1278,7 @@ namespace SNPService
             return Convert.ToInt32(t);
         }
 
-        public string GerResourceID(string ResourceName)
+        public string GetResourceID(string ResourceName)
         {
             string resourceId = "";                                                                     //stores the return value
             string sql = "SELECT ResourceId FROM [QRQC].[dbo].[CAMSTAR_Resources] WHERE ResourceName='" + ResourceName + "'";

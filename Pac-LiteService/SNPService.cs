@@ -1,4 +1,5 @@
 ﻿using SNPService.Comunications;
+using SNPService.Packets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,12 +20,9 @@ namespace SNPService
 
         private delegate void SetTextCallback(string text);                                                             //delegate for the function that is to be called when a message is received from the topic subscriber
 
+        private PacketCollection PacketCollection;
         private TopicSubscriber MainInputSubsriber;                                                                     //Main subscriber subs to SNP.Inbound
         public static SqlConnectionStringBuilder ENGDBConnection;                                                       //Connection to the ENGDB default db is SNPDb.
-        private EMPPackets EMPPackets;                                                                                  //collection of all EMP Packets and functions
-        private SNPPackets SNPPackets;                                                                                  //collection of all snp packets and functions
-        private ControlPackets ControlPackets;                                                                          //collection of all Control packets and functions
-        private ChainStretchPackets ChainStretchPackets;                                                                //collection of all Chain Stretch packets and functions
         private List<Disposable> ThingsToDispose;                                                                       //whenever you make something that inherits from IDisposable and needs to be disposed add to this. iterates through at end disposing of items.
         public static ConcurrentQueue<DiagnosticItem> DiagnosticItems = new ConcurrentQueue<DiagnosticItem>();          //queue for storing Diagnostic Items
         public static int LogggingLevel;                                                                                //what logging level the service has selected
@@ -107,7 +105,7 @@ namespace SNPService
         #region Connections/Resources/Misc
 
         /// <summary>
-        ///  called whenever a mqtt message from ActiveMQ is received
+        ///  called whenever a Packet is received. weather over UDP or MQTT. striped down to just the content no MQTT or UDP header
         /// </summary>
         private void MainInputSubsriber_OnmessageReceived(string message)
         {
@@ -169,8 +167,8 @@ namespace SNPService
             try
             {
                 DiagnosticItems.Enqueue(new DiagnosticItem("Connecting EMP Publisher", 2));                             //connect the EMp Publisher
-                EMPPackets.Publisher = new TopicPublisher(EMPPackets.TopicName, Broker);
-                ThingsToDispose.Add(new Disposable(nameof(EMPPackets.Publisher), EMPPackets.Publisher));                //add it to things to dispose
+                PacketCollection.EMPPackets.Publisher = new TopicPublisher(EMPPackets.TopicName, Broker);
+                ThingsToDispose.Add(new Disposable(nameof(PacketCollection.EMPPackets.Publisher), PacketCollection.EMPPackets.Publisher));                //add it to things to dispose
             }
             catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                     //logit
         }
@@ -257,6 +255,7 @@ namespace SNPService
         private void CallOnStart()
         {
             Packets = new Dictionary<int, Dictionary<int, Action<string>>>();
+            PacketCollection = new PacketCollection();
             try
             {
                 if (ConfigurationManager.AppSettings["ResetENGDBPassword"] != "")                                       //if the reset engineering password needs to be reset
@@ -291,8 +290,7 @@ namespace SNPService
                 catch (Exception ex)
                 {
                     DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
-                }
-                InstantiatePacketClasses();                                                                             //setup the packet classes.
+                }                                                                           //setup the packet classes.
                 ThingsToDispose = new List<Disposable>();                                                               //reset list of objects that need to be disposed
                 Task.Run(() => MQTTConnections());                                                                      //open all MQTT Connections
                 Task.Run(() => SQLConnections());                                                                       //open alll SQL Connections
@@ -303,14 +301,6 @@ namespace SNPService
             {
                 DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                                          //logem
             }
-        }
-
-        private void InstantiatePacketClasses()
-        {
-            EMPPackets = new EMPPackets();                                                                          //generate the packet classes
-            SNPPackets = new SNPPackets();
-            ControlPackets = new ControlPackets();
-            ChainStretchPackets = new ChainStretchPackets();
         }
 
         /// <summary>
@@ -341,6 +331,13 @@ namespace SNPService
                 fixingconnection = false;                                                                               //unlock it
             }
             functionThatFailed(message);                                                                                //recall the function that failed
+        }
+
+        /// <summary>
+        ///Used for when you want to Reastablish the SQL connection on fail but dont want it to do anything with the message after.
+        /// </summary>
+        public static void DoNothing(string Message)
+        {
         }
 
         #endregion Connections/Resources/Misc

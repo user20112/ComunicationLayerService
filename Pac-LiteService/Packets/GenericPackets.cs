@@ -11,7 +11,7 @@ namespace SNPService.Packets
 {
     internal class GenericPackets
     {
-        private GenericPackets()
+        public GenericPackets()
         {
             Dictionary<int, Action<string>> GenericDictionary = new Dictionary<int, Action<string>>();
             GenericDictionary.Add(1, (Action<string>)RunSQLCommand);
@@ -22,7 +22,7 @@ namespace SNPService.Packets
         /// <summary>
         /// Records the Chain Stretch information passed to it to the line database in a chainstretch table. if the table doesnt exist yet it generates it.
         /// </summary>
-        public static void RunSQLCommand(string message)
+        public void RunSQLCommand(string message)
         {
             try                                                                                     //try loop in case command fails.
             {
@@ -49,7 +49,7 @@ namespace SNPService.Packets
             }
         }
 
-        public static void RunCamstarService(string message)
+        public void RunCamstarService(string message)
         {
             string DataReceived;
             try
@@ -69,7 +69,7 @@ namespace SNPService.Packets
             catch (Exception ex) { SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 2)); }
         }
 
-        public static string Sendmessage(string host, int port, string content)
+        public string Sendmessage(string host, int port, string content)
         {
             ServerConnection connection = new ServerConnection();
             //create a server connection
