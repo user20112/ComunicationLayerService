@@ -2,6 +2,7 @@
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using System;
+using System.Threading.Tasks;
 
 namespace SNPService
 {
@@ -38,7 +39,7 @@ namespace SNPService
                 ITextMessage textMessage = message as ITextMessage;                                     //convert message into ITextMessage
                 if (this.OnMessageReceived != null)
                 {
-                    this.OnMessageReceived(textMessage.Text);                                           //fire the message to the MessageDelegate
+                    Task.Run(() => this.OnMessageReceived(textMessage.Text));                                           //fire the message to the MessageDelegate
                 }
             }
             catch
@@ -59,7 +60,7 @@ namespace SNPService
                     }
                     if (this.OnMessageReceived != null && textMessage != null)
                     {
-                        this.OnMessageReceived(Message);                                           //fire the message to the MessageDelegate
+                        Task.Run(() => this.OnMessageReceived(Message));                                           //fire the message to the MessageDelegate
                     }
                 }
                 catch

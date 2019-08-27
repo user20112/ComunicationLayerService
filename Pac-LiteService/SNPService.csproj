@@ -87,6 +87,7 @@
     <Compile Include="Comunications\QRQC\Line.cs" />
     <Compile Include="Comunications\TopicPublisher.cs" />
     <Compile Include="Comunications\TopicSubscriber.cs" />
+    <Compile Include="Comunications\UDPListener.cs" />
     <Compile Include="DiagnosticItem.cs" />
     <Compile Include="Encryptor.cs" />
     <Compile Include="Packets\ChainStretchPackets.cs" />

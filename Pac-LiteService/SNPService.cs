@@ -31,7 +31,7 @@ namespace SNPService
         public static int LogggingLevel;                                                                                //what logging level the service has selected
         public static bool Listening;                                                                                   //is the service listening to non control packets
         public static bool Sending;                                                                                     //is the service sending packets out to the real world
-        private bool running = false;                                                                                   //controls the diagnostic thread. when false the thread drops through and ends.
+        public static bool running = false;                                                                                   //controls the diagnostic thread. when false the thread drops through and ends.
         private string SubTopicName;                                                                                    //Topic the Main Subscriber is subbed to
         private string Broker;                                                                                          //IP of the broker we are connecting to
         private string ClientID;                                                                                        //Client ID for the SNP Service
@@ -41,8 +41,9 @@ namespace SNPService
         private static string ENG_DBPassword;                                                                           //Engineering databse password used to comunicate
         private static string ENG_DBInitialCatalog;                                                                     //Engineering Database that we are talking to
         private static bool fixingconnection = false;                                                                   //set high when we are fixing connection to stop every broken packet from trying but allowing the first to
-        private static bool Prod = false;
-        private static TopicPublisher ForwardPublisher;
+        private UDPListener uDPListener;                                                                                //listens for packets on the UDP Port
+        private int UDPPort;                                                                                            //port to listen on
+        private bool UDPEnabled;
         #endregion Variable Section
 
         #region Service Section
@@ -111,10 +112,6 @@ namespace SNPService
         {
             try
             {
-                if (Prod)
-                {
-                    Task.Run(() => ForwardPublisher.SendMessage(message));
-                }
                 DiagnosticItems.Enqueue(new DiagnosticItem(message, 4));                                                //log message and bits when it comes in.
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Header =" + Convert.ToInt32(message[0]).ToString(), 3));//log the header
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Type=" + Convert.ToInt32(message[1]).ToString(), 3));//and type
@@ -312,22 +309,33 @@ namespace SNPService
         /// <summary>
         /// Collection of TCP Connection setup
         /// </summary>
-        private void TCPConnections()                                                                                   // no TCP Connections anymore :/ still able though!
+        private void TCPConnections()                                                                                  
         {
         }
 
         /// <summary>
         /// Collection of UDP Connection setup
         /// </summary>
-        private void UDPConnections()                                                                                   //no udp connections anymore :/ still able though!
+        private void UDPConnections()
         {
-            // DiagnosticItems.Enqueue (new DiagnosticItem("Connecting to MDE", 2);
+            // DiagnosticItems.Enqueue (new DiagnosticItem("Connecting to MDE", 2);//used for MDE Currently Deprecieated but kept in in case roll out doesnt go as planned.
             //try
             //{
             //    SNPPackets.MDEClient = new UdpClient(SNPPackets.MDEOutPort);
             //    ThingsToDispose.Add(new Disposable(nameof(SNPPackets.MDEClient), SNPPackets.MDEClient));
             //}
             //catch (Exception ex) {  DiagnosticItems.Enqueue (new DiagnosticItem(ex.ToString(), 1); }//logit
+            if (UDPEnabled)
+                try
+                {
+                    DiagnosticItems.Enqueue(new DiagnosticItem("UdpConnection Being Established one port " + UDPPort.ToString(), 2));
+                    uDPListener = new UDPListener(UDPPort);
+                    uDPListener.OnMessageReceived += new MessageReceivedDelegate(MainInputSubsriber_OnmessageReceived);//add the deligate for when a message is received
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
+                }
         }
 
         /// <summary>
@@ -369,15 +377,6 @@ namespace SNPService
                 {
                     Encryptor.UpdateCamstarPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);      //do so
                 }
-                Prod = ConfigurationManager.AppSettings["IsProd"] == "1";
-                try
-                {
-                    ForwardPublisher = new TopicPublisher(ConfigurationManager.AppSettings["ForwardTopic"], Broker);
-                }
-                catch (Exception ex)
-                {
-                    DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
-                }
                 running = true;                                                                                         //stops diagnostic thread from dropping through until onstop is called.
                 Task.Run(() => DiagnosticThread());                                                                     //start diagnostic thread. ( jsut loops displaying errors.
                 SubTopicName = ConfigurationManager.AppSettings["MainTopicName"];                                       //load everything from the app settings
@@ -391,6 +390,18 @@ namespace SNPService
                 LogggingLevel = Convert.ToInt32(ConfigurationManager.AppSettings["LogggingLevel"]);
                 Listening = Convert.ToInt32(ConfigurationManager.AppSettings["Listening"]) == 1;
                 Sending = Convert.ToInt32(ConfigurationManager.AppSettings["Sending"]) == 1;
+                try
+                {
+                    if (Convert.ToInt32(ConfigurationManager.AppSettings["UDPListeningEnabled"]) == 1)
+                    {
+                        UDPEnabled = true;
+                        UDPPort = Convert.ToInt32(ConfigurationManager.AppSettings["UDPPort"]);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
+                }
                 EMPPackets = new EMPPackets();                                                                          //generate the packet classes
                 SNPPackets = new SNPPackets();
                 ControlPackets = new ControlPackets();
