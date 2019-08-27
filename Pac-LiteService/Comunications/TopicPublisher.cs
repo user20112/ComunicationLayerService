@@ -3,7 +3,7 @@ using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using System;
 
-namespace SNPService
+namespace SNPService.Comunications
 {
     public class TopicPublisher : IDisposable
     {

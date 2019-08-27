@@ -7,6 +7,7 @@
         public ControlPackets ControlPackets;                                                                          //collection of all Control packets and functions
         public ChainStretchPackets ChainStretchPackets;                                                                //collection of all Chain Stretch packets and functions
         public GenericPackets GenericPackets;                                                                          //collection of all Generic Packets and functions
+
         public PacketCollection()
         {
             EMPPackets = new EMPPackets();                                                                          //generate the packet classes

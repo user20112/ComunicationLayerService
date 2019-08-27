@@ -1,5 +1,6 @@
 ﻿using SNPService.Comunications;
 using SNPService.Packets;
+using SNPService.Resources;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -96,7 +97,9 @@ namespace SNPService
                         }
                     }
                 }
-                catch (Exception ex) { }                                                                               //catch any errors and cry becouse we cant log them.
+                catch
+                {
+                }                                                                               //catch any errors and cry becouse we cant log them.
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using Camstar.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SNPService.Resources;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -51,7 +52,6 @@ namespace SNPService.Packets
 
         public void RunCamstarService(string message)
         {
-            string DataReceived;
             try
             {
                 string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.

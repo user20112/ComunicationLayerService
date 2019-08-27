@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SNPService.Comunications.QRQC;
+using SNPService.Resources;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -498,7 +499,6 @@ namespace SNPService
         /// </summary>
         private void CamstarIndexSummary(string message)
         {
-            string DataReceived;
             try
             {
                 string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.
@@ -546,7 +546,6 @@ namespace SNPService
         /// </summary>
         private void CamstarProductChangePacket(string message)
         {
-            string DataReceived;
             try
             {
                 string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.
@@ -719,7 +718,6 @@ namespace SNPService
         /// </summary>
         private void CamstarDowntimePacket(string message)
         {
-            string DataReceived;
             try
             {
                 string jsonString = message.Substring(7, message.Length - 7);                       //grab json data from the end.
@@ -1186,6 +1184,7 @@ namespace SNPService
                 }
                 catch (Exception ex)
                 {
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
             }
 
@@ -1272,6 +1271,7 @@ namespace SNPService
                 }
                 catch (Exception ex)
                 {
+                    SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));
                 }
             }
 

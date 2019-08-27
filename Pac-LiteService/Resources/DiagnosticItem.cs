@@ -1,4 +1,4 @@
-﻿namespace SNPService
+﻿namespace SNPService.Resources
 {
     public class DiagnosticItem
     {

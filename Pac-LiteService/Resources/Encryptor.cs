@@ -1,6 +1,6 @@
 ﻿using System.Configuration;
 
-namespace SNPService
+namespace SNPService.Resources
 {
     public class Encryptor
     {

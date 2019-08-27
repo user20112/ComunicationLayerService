@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SNPService.Resources;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Text;
 
-namespace SNPService
+namespace SNPService.Packets
 {
     internal class ChainStretchPackets
     {

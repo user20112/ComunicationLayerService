@@ -88,13 +88,14 @@
     <Compile Include="Comunications\TopicPublisher.cs" />
     <Compile Include="Comunications\TopicSubscriber.cs" />
     <Compile Include="Comunications\UDPListener.cs" />
-    <Compile Include="DiagnosticItem.cs" />
-    <Compile Include="Encryptor.cs" />
+    <Compile Include="Resources\DiagnosticItem.cs" />
+    <Compile Include="Resources\Encryptor.cs" />
     <Compile Include="Packets\ChainStretchPackets.cs" />
     <Compile Include="Packets\ControlPackets.cs" />
     <Compile Include="Packets\EMPPackets.cs" />
     <Compile Include="Packets\GenericPacketClass.cs" />
     <Compile Include="Packets\GenericPackets.cs" />
+    <Compile Include="Packets\PacketCollection.cs" />
     <Compile Include="SNPService.cs">
       <SubType>Component</SubType>
     </Compile>

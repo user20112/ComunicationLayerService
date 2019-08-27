@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SNPService.Resources;
+using System;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
