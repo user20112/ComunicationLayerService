@@ -43,7 +43,8 @@ namespace SNPService
         private int UDPPort;                                                                                            //port to listen on
         private bool UDPEnabled;
         public static Dictionary<int, Dictionary<int, Action<string>>> Packets;
-
+        private TopicPublisher ForwardPublisher;
+        private bool IsProd = false;
         #endregion Variable Section
 
         #region Service Section
@@ -96,6 +97,10 @@ namespace SNPService
                             }
                         }
                     }
+                    else
+                    {
+                        Thread.Sleep(100);                                                      //if there is no diagnostic items sleep for a bit to reduce thread load.
+                    }
                 }
                 catch
                 {
@@ -114,6 +119,10 @@ namespace SNPService
         {
             try
             {
+                if (IsProd)
+                {
+                    ForwardPublisher.SendMessage(message);
+                }
                 DiagnosticItems.Enqueue(new DiagnosticItem(message, 4));                                                //log message and bits when it comes in.
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Header =" + Convert.ToInt32(message[0]).ToString(), 3));//log the header
                 DiagnosticItems.Enqueue(new DiagnosticItem("Packet Type=" + Convert.ToInt32(message[1]).ToString(), 3));//and type
@@ -267,7 +276,12 @@ namespace SNPService
                 }
                 if (ConfigurationManager.AppSettings["ResetCamstarPassword"] != "")                                     //if the camstar password needs to be reset
                 {
-                    Encryptor.UpdateCamstarPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);      //do so
+                    Encryptor.UpdateCamstarPassword(ConfigurationManager.AppSettings["ResetCamstarPassword"], true);    //do so
+                }
+                IsProd = ConfigurationManager.AppSettings["IsProd"] == "1";
+                if (IsProd)                                                                                             //if this is the prod Service setup the forward topic
+                {
+                    ForwardPublisher = new TopicPublisher(ConfigurationManager.AppSettings["ForwardTopic"], Broker);     //do so
                 }
                 running = true;                                                                                         //stops diagnostic thread from dropping through until onstop is called.
                 Task.Run(() => DiagnosticThread());                                                                     //start diagnostic thread. ( jsut loops displaying errors.
