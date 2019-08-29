@@ -45,16 +45,23 @@ namespace SNPService
         public static Dictionary<int, Dictionary<int, Action<string>>> Packets;
         private TopicPublisher ForwardPublisher;
         private bool IsProd = false;
+
         #endregion Variable Section
 
         #region Service Section
 
+        /// <summary>
+        ///  Called on service constructor
+        /// </summary>
         public SNPService()
         {
             InitializeComponent();
             DiagnosticItems.Enqueue(new DiagnosticItem("Hello World!", 1));                                            //say hello to the world
         }
 
+        /// <summary>
+        ///  Called on service start
+        /// </summary>
         protected override void OnStart(string[] args)
         {
             CallOnStart();
@@ -143,11 +150,13 @@ namespace SNPService
                     else
                     {
                         //you hit here if you havent setup your function as part of the dictionary.
+                        DiagnosticItems.Enqueue(new DiagnosticItem("Packet received that matches an application but not a packet type/function", 3));
                     }
                 }
                 else
                 {
                     //you hit here if you havent setup your application as part of the Dictionary.
+                    DiagnosticItems.Enqueue(new DiagnosticItem("Packet received that does not match an application or packet type.", 3));
                 }
             }
             catch (Exception ex)                                                                                        //catch exceptions
@@ -169,13 +178,6 @@ namespace SNPService
                 ThingsToDispose.Add(new Disposable(nameof(MainInputSubsriber), MainInputSubsriber));                    //add to reference pile so it disposes of itself properly.
             }
             catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                     //logit
-            //try
-            //{
-            //     DiagnosticItems.Enqueue (new DiagnosticItem("Connecting SNPPublisher", 2));
-            //    SNPPackets.Publisher = new TopicPublisher(SNPPackets.TopicName, Broker);
-            //    ThingsToDispose.Add(new Disposable(nameof(SNPPackets.Publisher), SNPPackets.Publisher));
-            //}
-            //catch (Exception ex) {  DiagnosticItems.Enqueue (new DiagnosticItem(ex.ToString(), 1)); }
             try
             {
                 DiagnosticItems.Enqueue(new DiagnosticItem("Connecting EMP Publisher", 2));                             //connect the EMp Publisher
@@ -199,8 +201,6 @@ namespace SNPService
                 ENGDBConnection.UserID = ENG_DBUserID;                                                                  //and the username
                 ENGDBConnection.Password = ENG_DBPassword;                                                              //password
                 ENGDBConnection.InitialCatalog = ENG_DBInitialCatalog;                                                  //and finally the starting database
-                //ENGDBConnection.IntegratedSecurity = true;
-                //ENGDBConnection.ConnectionString = "Data Source=DBM-HILCSqaENG1;Initial Catalog=SNPDB;Integrated Security=SSPI;User Id= sys_hil-SNP; Password= NotPac@dm1n!;";
             }
             catch (Exception ex) { DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1)); }                     //logit
         }
