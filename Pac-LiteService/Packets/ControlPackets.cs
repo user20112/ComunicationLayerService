@@ -9,6 +9,8 @@ namespace SNPService.Packets
 {
     internal class ControlPackets
     {
+        #region Variable Section
+
         public ControlPackets()
         {
             Dictionary<int, Action<string>> ControlDictionary = new Dictionary<int, Action<string>>();
@@ -17,6 +19,10 @@ namespace SNPService.Packets
             ControlDictionary.Add(3, (Action<string>)Deafen);
             SNPService.Packets.Add(3, ControlDictionary);
         }
+
+        #endregion Variable Section
+
+        #region Packet Section
 
         /// <summary>
         /// Sets the logging level of the SNP Service
@@ -98,5 +104,7 @@ namespace SNPService.Packets
                 SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));                               //let it log it
             }
         }
+
+        #endregion Packet Section
     }
 }

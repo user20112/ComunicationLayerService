@@ -5,6 +5,8 @@ namespace SNPService.Packets
 {
     internal class GenericPacketClass
     {
+        #region Variable Section
+
         public GenericPacketClass()
         {
             Dictionary<int, Action<string>> GenericPacketClassDictionary = new Dictionary<int, Action<string>>();//name this after your application
@@ -13,9 +15,15 @@ namespace SNPService.Packets
             SNPService.Packets.Add(1, GenericPacketClassDictionary);//this should be your ApplicationID and name
         }
 
+        #endregion Variable Section
+
+        #region Packet Section
+
         public void Packet1(string message)
         {
             //do whatever you want with the packet.
         }
+
+        #endregion Packet Section
     }
 }

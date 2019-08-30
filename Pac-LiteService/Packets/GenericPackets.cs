@@ -12,6 +12,8 @@ namespace SNPService.Packets
 {
     internal class GenericPackets
     {
+        #region Variable Section
+
         public GenericPackets()
         {
             Dictionary<int, Action<string>> GenericDictionary = new Dictionary<int, Action<string>>();
@@ -19,6 +21,10 @@ namespace SNPService.Packets
             GenericDictionary.Add(2, (Action<string>)RunCamstarService);
             SNPService.Packets.Add(254, GenericDictionary);
         }
+
+        #endregion Variable Section
+
+        #region Packet Section
 
         /// <summary>
         /// Records the Chain Stretch information passed to it to the line database in a chainstretch table. if the table doesnt exist yet it generates it.
@@ -95,5 +101,7 @@ namespace SNPService.Packets
                 return "";                                                                          //return null string
             }
         }
+
+        #endregion Packet Section
     }
 }

@@ -10,6 +10,8 @@ namespace SNPService.Packets
 {
     internal class ChainStretchPackets
     {
+        #region Variable Section
+
         public ChainStretchPackets()
         {
             Dictionary<int, Action<string>> ChainStretchDictionary = new Dictionary<int, Action<string>>();
@@ -17,6 +19,12 @@ namespace SNPService.Packets
 
             SNPService.Packets.Add(4, ChainStretchDictionary);
         }
+
+        #endregion Variable Section
+
+
+
+        #region Packet Section
 
         /// <summary>
         /// Records the Chain Stretch information passed to it to the line database in a chainstretch table. if the table doesnt exist yet it generates it.
@@ -58,5 +66,7 @@ namespace SNPService.Packets
                 SNPService.DiagnosticItems.Enqueue(new DiagnosticItem(ex.ToString(), 1));           //else log the error and move on
             }
         }
+
+        #endregion Packet Section
     }
 }
