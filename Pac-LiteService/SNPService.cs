@@ -281,7 +281,9 @@ namespace SNPService
                 IsProd = ConfigurationManager.AppSettings["IsProd"] == "1";
                 if (IsProd)                                                                                             //if this is the prod Service setup the forward topic
                 {
+                    DiagnosticItems.Enqueue(new DiagnosticItem("Prod version, all pacekts will be forwarded to " + ConfigurationManager.AppSettings["ForwardTopic"] + " Topic", 2));
                     ForwardPublisher = new TopicPublisher(ConfigurationManager.AppSettings["ForwardTopic"], Broker);     //do so
+                    ThingsToDispose.Add(new Disposable(nameof(ForwardPublisher), ForwardPublisher));
                 }
                 running = true;                                                                                         //stops diagnostic thread from dropping through until onstop is called.
                 Task.Run(() => DiagnosticThread());                                                                     //start diagnostic thread. ( jsut loops displaying errors.
